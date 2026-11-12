@@ -137,7 +137,7 @@ a{color:var(--rose)}
   <button class="tab on" data-act="tab" data-tab="res">Resumen</button>
   <button class="fab" id="fab" data-act="new" aria-label="Registrar">+</button>
   <button class="tab" data-act="tab" data-tab="mov">Movimientos</button>
-  <button class="tab" data-act="tab" data-tab="cli">Clientes</button>
+  <button class="tab" data-act="tab" data-tab="cli">Contactos</button>
 </div></nav>
 
 <div class="sheetwrap" id="m1" hidden><div class="sheet" id="s1"></div></div>
@@ -298,8 +298,10 @@ function buildShell(){
     $('#fQ').addEventListener('input', e => { S.q = e.target.value; fillMov(); });
   } else {
     main.innerHTML =
-      '<div class="row search"><input id="qc" type="search" placeholder="Buscar cliente…" style="flex:1">' +
-      '<button class="btn small" data-act="newcli">+ Cliente</button></div><div id="cliList"></div>';
+      '<div class="chips" style="padding-top:10px"><button class="chip ' + (S.cliVista !== 'prov' ? 'on' : '') + '" data-act="clivista" data-id="cli">Clientes</button>' +
+      '<button class="chip ' + (S.cliVista === 'prov' ? 'on' : '') + '" data-act="clivista" data-id="prov">Proveedores</button></div>' +
+      '<div class="row search"><input id="qc" type="search" placeholder="' + (S.cliVista === 'prov' ? 'Buscar proveedor…' : 'Buscar cliente…') + '" style="flex:1">' +
+      (S.cliVista === 'prov' ? '<button class="btn small" data-act="newcompra">+ Compra</button>' : '<button class="btn small" data-act="newcli">+ Cliente</button>') + '</div><div id="cliList"></div>';
     $('#qc').value = S.qc;
     $('#qc').addEventListener('input', e => { S.qc = e.target.value; fillCli(); });
   }
@@ -322,7 +324,7 @@ function itemHtml(m, opts){
   const who = m.tipo === 'venta' ? cliName(m) : (m.tercero || '');
   const title = m.desc || (m.tipo === 'cambio' ? (m.signo > 0 ? 'Cambio: entrada' : 'Cambio: salida') : t.n);
   const cajaTxt = m.caja ? CAJAS[m.caja].n : (pend ? (m.signo > 0 ? 'Por cobrar' : 'Por pagar') : '');
-  const sub = [t.n, cajaTxt, who].filter(Boolean).join(' · ');
+  const sub = [t.n, m.prod || '', cajaTxt, who, (m.tipo === 'venta' && m.costo > 0 && m.monto > 0) ? 'margen ' + nf.format((m.monto - m.costo) / m.monto * 100) + '%' : ''].filter(Boolean).join(' · ');
   const eq = (m.moneda === 'VES' && usd(m)) ? '<div class="u">≈ ' + money(usd(m),'USD') + '</div>' : '';
   const por = m.por ? '<span class="who" data-uid="' + esc(m.por) + '"></span>' : '';
   return '<button class="item" data-act="' + (opts.act || 'edit') + '" data-id="' + esc(m.id) + '">' +
@@ -437,7 +439,63 @@ function cliStats(id){
   });
   return {total, n, last, pend};
 }
+function provStats(){
+  const o = {};
+  S.movs.forEach(m => {
+    if(m.tipo !== 'compra') return;
+    const n = (m.tercero || '').trim() || 'Sin proveedor';
+    const k = n.toLowerCase();
+    const p = o[k] || (o[k] = {k, n, q:0, total:0, pend:0, last:''});
+    p.q++; p.total += usd(m); if(m.pagado === false) p.pend += usd(m);
+    if(String(m.fecha) > p.last) p.last = String(m.fecha);
+  });
+  return Object.keys(o).map(k => o[k]);
+}
+function fillProv(){
+  const list = $('#cliList'); if(!list) return;
+  const q = S.qc.trim().toLowerCase();
+  const all = provStats();
+  const rows = all.filter(p => !q || p.k.indexOf(q) >= 0).sort((a,b) => b.total - a.total);
+  if(!rows.length){ list.innerHTML = '<div class="empty">' + (all.length ? 'Ningún proveedor coincide.' : 'Aún no hay proveedores. Aparecen solos cuando registras una compra con el nombre del proveedor.') + '</div>'; return; }
+  const tot = rows.reduce((a,p) => a + p.total, 0), deb = rows.reduce((a,p) => a + p.pend, 0);
+  list.innerHTML = '<div class="hint" style="margin:0 2px 8px">Total comprado: <b>' + money(tot,'USD') + '</b>' + (deb > 0 ? ' · les debes <b class="pend">' + money(deb,'USD') + '</b>' : '') + '</div><div class="list">' + rows.map(p =>
+    '<button class="item" data-act="provver" data-id="' + esc(p.k) + '"><div class="l"><div class="t">' + esc(p.n) + '</div>' +
+    '<div class="s">' + p.q + ' compra' + (p.q === 1 ? '' : 's') + ' · última ' + esc(fdate(p.last)) + '</div></div>' +
+    '<div class="r"><div class="a">' + money(p.total,'USD') + '</div>' + (p.pend ? '<div class="u pend">le debes ' + money(p.pend,'USD') + '</div>' : '') + '</div></button>').join('') + '</div>';
+}
+function openProvVer(k){
+  const p = provStats().find(x => x.k === k); if(!p) return;
+  const compras = sorted(S.movs.filter(m => m.tipo === 'compra' && ((m.tercero || '').trim() || 'Sin proveedor').toLowerCase() === k));
+  const anio = ymd(new Date()).slice(0,4);
+  const esteAnio = compras.filter(m => String(m.fecha).slice(0,4) === anio).reduce((a,m) => a + usd(m), 0);
+  M.kind = 'view';
+  openSheet(1, '<h3>' + esc(p.n) + '</h3><div class="card">' +
+    '<div class="kv"><span>Total comprado</span><b>' + money(p.total,'USD') + '</b></div>' +
+    '<div class="kv"><span>Este año</span><span>' + money(esteAnio,'USD') + '</span></div>' +
+    '<div class="kv"><span>Compras</span><span>' + p.q + ' · última ' + esc(fdate(p.last)) + '</span></div>' +
+    '<div class="kv"><span>Compra promedio</span><span>' + money(p.total / p.q,'USD') + '</span></div>' +
+    (p.pend ? '<div class="kv"><span>Pendiente por pagar</span><b class="pend">' + money(p.pend,'USD') + '</b></div>' : '') + '</div>' +
+    '<h2>Historial</h2><div class="list">' + compras.map(m => itemHtml(m)).join('') + '</div>' +
+    '<div class="actions">' + (k !== 'sin proveedor' && S.canWrite ? '<button class="btn sec" id="bRen">Cambiar nombre</button>' : '') + '<button class="btn sec" id="bClose">Cerrar</button>' + (S.canWrite ? '<button class="btn" id="bBuy">Nueva compra</button>' : '') + '</div>');
+  $('#bClose').onclick = () => closeSheet(1);
+  if($('#bBuy')) $('#bBuy').onclick = () => openMov({tipo:'compra', tercero: k === 'sin proveedor' ? '' : p.n});
+  if($('#bRen')) $('#bRen').onclick = () => {
+    M.f = {nuevo: p.n}; M.fields = null; M.kind = 'ren'; M.rerender = [];
+    openSheet(1, '<h3>Cambiar nombre</h3><label>Nombre del proveedor<input name="nuevo" value="' + esc(p.n) + '" autocomplete="off"></label>' +
+      '<div class="hint">Se cambia en sus ' + compras.length + ' compras. Si escribes el nombre de otro proveedor, quedan unidos.</div>' +
+      '<div class="actions"><button class="btn sec" id="bCancel">Cancelar</button><button class="btn" id="bSave">Guardar</button></div>');
+    $('#bCancel').onclick = () => closeSheet(1);
+    $('#bSave').onclick = async () => {
+      const nuevo = (M.f.nuevo || '').trim(); if(!nuevo) return toast('Escribe un nombre');
+      $('#bSave').disabled = true;
+      try{ for(const m of compras) await S.db.collection('movs').doc(m.id).update({tercero: nuevo}); closeSheet(1); toast('Proveedor actualizado'); }
+      catch(e){ $('#bSave').disabled = false; toast('No se pudo cambiar'); }
+    };
+  };
+  resolveNames();
+}
 function fillCli(){
+  if(S.cliVista === 'prov') return fillProv();
   const list = $('#cliList'); if(!list) return;
   const q = S.qc.trim().toLowerCase();
   const rows = S.cli.filter(c => !q || (c.nombre + ' ' + (c.telefono||'') + ' ' + (c.notas||'')).toLowerCase().indexOf(q) >= 0)
@@ -479,6 +537,7 @@ $('#s1').addEventListener('input', e => {
   M.f[e.target.name] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   if(e.target.name === 'monto') M.f.montoEdit = true;
   if(M.kind === 'cambio') { const hh = $('#cambioHint'); if(hh) hh.innerHTML = cambioHint(M.f); }
+  if(M.kind === 'mov') { const hh = $('#margenHint'); if(hh) hh.innerHTML = margenHint(M.f); }
   if(M.kind === 'cuadrar') { const hh = $('#cuadHint'); if(hh) hh.innerHTML = cuadrarHint(M.f); }
 });
 $('#s1').addEventListener('change', e => {
@@ -499,6 +558,12 @@ function cambioHint(f){
   if(a.m === b.m) return '';
   const ves = a.m === 'VES' ? o : d, dol = a.m === 'USD' ? o : d;
   return 'Tasa implícita: Bs ' + nf.format(ves / dol) + ' por $';
+}
+function margenHint(f){
+  const v = num(f.monto), c = num(f.costo);
+  if(!(v > 0) || !(c > 0)) return 'El costo es lo que gastaste en flores y materiales para esta venta. Sirve para ver el margen; no cambia la ganancia del mes.';
+  const g = v - c;
+  return 'Margen de esta venta: <b class="' + (g < 0 ? 'neg' : 'pos') + '">' + nf.format(g) + ' (' + nf.format(g / v * 100) + '%)</b>';
 }
 function movFields(f){
   let h = '';
@@ -535,6 +600,13 @@ function movFields(f){
          '<option value="__nuevo"' + (f.clienteId === '__nuevo' ? ' selected' : '') + '>+ Cliente nuevo…</option></select></label>';
     if(f.clienteId === '__nuevo') h += '<label>Nombre del cliente nuevo<input name="clienteNuevo" value="' + esc(f.clienteNuevo) + '" autocomplete="off"></label>';
   }
+  if(f.tipo === 'venta'){
+    const prods = Array.from(new Set(S.movs.filter(m => m.tipo === 'venta' && m.prod).map(m => m.prod))).sort();
+    h += '<div class="row2"><label>Producto (opcional)<input name="prod" list="prodList" value="' + esc(f.prod) + '" autocomplete="off" placeholder="Ej. Ramo, Arreglo"></label>' +
+         '<label>Costo (' + (moneda === 'USD' ? '$' : 'Bs') + ', opcional)<input name="costo" inputmode="decimal" placeholder="0,00" value="' + esc(f.costo) + '"></label></div>' +
+         '<datalist id="prodList">' + prods.map(p => '<option value="' + esc(p) + '">').join('') + '</datalist>' +
+         '<div class="hint" id="margenHint">' + margenHint(f) + '</div>';
+  }
   if(f.tipo === 'compra'){
     const provs = Array.from(new Set(S.movs.filter(m => m.tipo === 'compra' && m.tercero).map(m => m.tercero)));
     h += '<label>Proveedor<input name="tercero" list="provList" value="' + esc(f.tercero) + '" autocomplete="off"></label>' +
@@ -558,11 +630,11 @@ function openMov(opts){
     tipo: old.tipo, fecha: old.fecha, pagado: old.pagado !== false,
     caja: old.caja || 'zelle', moneda: old.moneda || 'USD', monto: String(old.monto).replace('.',','),
     tasa: old.tasa ? String(old.tasa).replace('.',',') : tasaTxt,
-    clienteId: old.clienteId || '', clienteNuevo: '', tercero: old.tercero || '', cat: old.cat || 'Otros', desc: old.desc || '',
+    prod: old.prod || '', costo: old.costo ? String(old.costo).replace('.',',') : '', clienteId: old.clienteId || '', clienteNuevo: '', tercero: old.tercero || '', cat: old.cat || 'Otros', desc: old.desc || '',
     o_caja:'efe_bs', o_monto:'', d_caja:'zelle', d_monto:''
   } : {
     tipo: opts.tipo || 'venta', fecha: ymd(new Date()), pagado: true, caja:'zelle', moneda:'USD', monto:'', tasa: tasaTxt,
-    clienteId: opts.clienteId || '', clienteNuevo:'', tercero:'', cat:'Otros', desc:'',
+    prod:'', costo:'', clienteId: opts.clienteId || '', clienteNuevo:'', tercero: opts.tercero || '', cat:'Otros', desc:'',
     o_caja:'efe_bs', o_monto:'', d_caja:'zelle', d_monto:''
   };
   M.f = f; M.fields = movFields; M.kind = 'mov'; M.oldSigno = old ? old.signo : 1;
@@ -623,6 +695,7 @@ async function saveMov(old){
       const doc = {
         fecha:f.fecha, tipo:f.tipo, signo:(TIPOS[f.tipo].s || (old ? old.signo : 1)), caja, moneda, monto:r2(monto), pagado, tasa,
         clienteId, clienteNombre, tercero: f.tipo === 'compra' ? f.tercero.trim() : '', cat: f.tipo === 'gasto' ? f.cat : '',
+        prod: f.tipo === 'venta' ? (f.prod || '').trim() : '', costo: (f.tipo === 'venta' && num(f.costo) > 0) ? r2(num(f.costo)) : 0,
         desc:f.desc.trim(), por: old ? (old.por || '') : (S.uid || ''), creado: old ? (old.creado || Date.now()) : Date.now(), grupo:''
       };
       if(old) await S.db.collection('movs').doc(old.id).set(doc);
@@ -833,11 +906,16 @@ function buildCierre(mes){
     });
     return {k, n:CAJAS[k].n, m:CAJAS[k].m, ini, ent, sal, fin: ini + ent - sal};
   });
+  const costoUsd = m => { if(!(m.costo > 0)) return 0; if(m.moneda === 'USD') return m.costo; const t = m.tasa || S.tasa; return t ? m.costo / t : 0; };
+  const conCosto = ventasL.filter(m => m.costo > 0);
+  const mg = {v: conCosto.reduce((a,m) => a + usd(m), 0), c: conCosto.reduce((a,m) => a + costoUsd(m), 0), n: conCosto.length};
+  const pr = {}; ventasL.forEach(m => { const k = m.prod || ''; if(!k) return; const o = pr[k] || (pr[k] = {n:k, q:0, v:0, vc:0, c:0}); o.q++; o.v += usd(m); if(m.costo > 0){ o.vc += usd(m); o.c += costoUsd(m); } });
+  const prods = Object.keys(pr).map(k => pr[k]).sort((a,b) => b.v - a.v);
   const cli = {}; ventasL.forEach(m => { const n = cliName(m) || 'Sin cliente'; cli[n] = (cli[n] || 0) + usd(m); });
   const top = Object.keys(cli).map(n => ({n, v:cli[n]})).sort((a,b) => b.v - a.v).slice(0,5);
   let cobrar = 0, pagar = 0;
   S.movs.filter(m => m.pagado === false).forEach(m => { if(m.signo > 0) cobrar += usd(m); else pagar += usd(m); });
-  return {mes, ventas, compras, gastos, porCat, personal, porCatP, retiros, porRet, aportes, ajustes, util, margen, cajas, top, cobrar, pagar, nVentas: ventasL.length};
+  return {mes, ventas, compras, gastos, porCat, personal, porCatP, retiros, porRet, aportes, ajustes, mg, prods, util, margen, cajas, top, cobrar, pagar, nVentas: ventasL.length};
 }
 function cierreText(c){
   const L = [];
@@ -857,6 +935,8 @@ function cierreText(c){
   c.cajas.forEach(x => L.push(x.n + ': inicio ' + money(x.ini,x.m) + ' | entró ' + money(x.ent,x.m) + ' | salió ' + money(x.sal,x.m) + ' | final ' + money(x.fin,x.m)));
   L.push('');
   L.push('Por cobrar hoy: ' + money(c.cobrar,'USD') + ' · Por pagar hoy: ' + money(c.pagar,'USD'));
+  if(c.mg.n){ L.push(''); L.push('MARGEN (ventas con costo anotado: ' + c.mg.n + ')'); L.push('Vendido ' + money(c.mg.v,'USD') + ' · costo ' + money(c.mg.c,'USD') + ' · margen ' + money(c.mg.v - c.mg.c,'USD') + ' (' + nf.format(c.mg.v ? (c.mg.v - c.mg.c) / c.mg.v * 100 : 0) + '%)'); }
+  if(c.prods.length){ L.push(''); L.push('POR PRODUCTO'); c.prods.forEach(x => L.push(x.n + ' (' + x.q + '): ' + money(x.v,'USD') + (x.c > 0 ? ' · margen ' + nf.format((x.vc - x.c) / x.vc * 100) + '%' : ''))); }
   if(c.top.length){ L.push(''); L.push('MEJORES CLIENTES'); c.top.forEach(t => L.push(t.n + ': ' + money(t.v,'USD'))); }
   if(!S.tasa) L.push('\nNota: sin tasa definida, los movimientos en Bs sin tasa propia no se convierten a dólares.');
   return L.join('\n');
@@ -913,6 +993,8 @@ function openCierre(forzar){
        '<div class="kv"><span>Saldo final</span><b>' + money(x.fin,x.m) + '</b></div></div>').join('') + '</div>';
   h += extra;
   h += '<h2>Pendientes hoy</h2><div class="card">' + row('Por cobrar', money(c.cobrar,'USD'), 'pend') + row('Por pagar', money(c.pagar,'USD'), 'pend') + '</div>';
+  if(c.mg.n) h += '<h2>Margen de las ventas</h2><div class="card">' + row('Ventas con costo anotado (' + c.mg.n + ')', money(c.mg.v,'USD')) + row('Costo de flores y materiales', '− ' + money(c.mg.c,'USD')) + row('Margen (' + nf.format(c.mg.v ? (c.mg.v - c.mg.c) / c.mg.v * 100 : 0) + '%)', money(c.mg.v - c.mg.c,'USD'), (c.mg.v - c.mg.c) < 0 ? 'neg' : 'pos') + '</div>';
+  if(c.prods.length) h += '<h2>Por producto</h2><div class="card">' + c.prods.map(x => row(esc(x.n) + ' (' + x.q + ')', money(x.v,'USD') + (x.c > 0 ? ' · <span class="' + ((x.vc - x.c) < 0 ? 'neg' : 'pos') + '">' + nf.format((x.vc - x.c) / x.vc * 100) + '%</span>' : ''))).join('') + '<div class="hint" style="margin:6px 0 0">Vendido · margen (solo si anotaste el costo)</div></div>';
   if(c.top.length) h += '<h2>Mejores clientes</h2><div class="card">' + c.top.map(t => row(esc(t.n), money(t.v,'USD'))).join('') + '</div>';
   h += '<div class="hint" style="margin-top:8px">Las compras y gastos se cuentan en el periodo en que ocurrieron. Los bolívares se pasan a dólares con la tasa de cada registro.</div>';
   h += '<div class="actions"><button class="btn sec" id="bCopy">Copiar resumen</button><button class="btn" id="bClose">Cerrar</button></div>';
@@ -1035,6 +1117,9 @@ document.addEventListener('click', e => {
     case 'edit': if(!S.canWrite) return toast('Solo lectura'); openMov({id}); break;
     case 'cobrar': if(!S.canWrite) return toast('Solo lectura'); openCobrar(id); break;
     case 'cliver': openCliVer(id); break;
+    case 'provver': openProvVer(id); break;
+    case 'clivista': S.cliVista = id; S.qc = ''; S.built = ''; buildShell(); fill(); break;
+    case 'newcompra': if(!S.canWrite) return toast('Solo lectura'); openMov({tipo:'compra'}); break;
     case 'cierre': openCierre(); break;
     case 'cierreanio': openCierre((S.mes || ymd(new Date())).slice(0,4)); break;
     case 'cuadrar': openCuadrar(); break;
