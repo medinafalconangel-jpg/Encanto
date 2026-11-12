@@ -189,7 +189,9 @@ const TIPOS = {
   cambio:  {n:'Cambio entre cajas'},
   inicial: {n:'Saldo inicial',s: 1}
 };
-const CATS = ['Alquiler','Servicios','Sueldos','Transporte','Empaque y materiales','Otros'];
+const CATS = ['Alquiler','Servicios','Sueldos','Transporte','Empaque y materiales','Otros','Vivienda (alquiler)','Educación','Salud','Personal / hogar','Préstamos','Cambio de divisas'];
+// gastos que salen de la caja pero no son del negocio: no restan a la ganancia
+const NOOP = ['Vivienda (alquiler)','Educación','Salud','Personal / hogar','Préstamos','Cambio de divisas'];
 
 /* ---------- estado ---------- */
 const S = {
@@ -213,12 +215,12 @@ function balances(){
   return b;
 }
 function monthStats(mes){
-  const o = {ventas:0,compras:0,gastos:0};
+  const o = {ventas:0,compras:0,gastos:0,personal:0};
   S.movs.forEach(m => {
     if(mes && String(m.fecha||'').slice(0,7) !== mes) return;
     if(m.tipo === 'venta') o.ventas += usd(m);
     else if(m.tipo === 'compra') o.compras += usd(m);
-    else if(m.tipo === 'gasto') o.gastos += usd(m);
+    else if(m.tipo === 'gasto'){ if(NOOP.indexOf(m.cat) >= 0) o.personal += usd(m); else o.gastos += usd(m); }
   });
   return o;
 }
@@ -356,8 +358,9 @@ function fillRes(){
        '<div class="bar"><span>Ventas</span><i style="width:' + (st.ventas / mx * 100) + '%;background:var(--green)"></i></div>' +
        '<div class="bar"><span>Compras</span><i style="width:' + (st.compras / mx * 100) + '%;background:var(--rose)"></i></div>' +
        '<div class="bar"><span>Gastos</span><i style="width:' + (st.gastos / mx * 100) + '%;background:var(--amber)"></i></div></div>' +
-       '<div class="hint" style="margin:10px 0 12px">Ganancia = ventas − compras − gastos. Los bolívares se pasan a dólares con la tasa de cada registro.</div>' +
-       '<button class="btn" style="width:100%" data-act="cierre">Ver estado financiero del mes</button></div>';
+       '<div class="hint" style="margin:10px 0 12px">Ganancia = ventas − compras − gastos del negocio (préstamos, vivienda, salud, educación, gastos personales y cambios de divisas van aparte). Los bolívares se pasan a dólares con la tasa de cada registro.</div>' +
+       '<button class="btn" style="width:100%" data-act="cierre">Ver estado financiero del mes</button>' +
+       (S.canWrite ? '<button class="btn" style="width:100%;margin-top:8px;background:transparent;color:var(--muted);border:1px solid var(--line)" data-act="importar">Importar historial (archivo)</button><input type="file" id="impFile" accept=".json,application/json" hidden>' : '') + '</div>';
 
   const last = sorted(S.movs).slice(0,6);
   h += '<h2>Últimos movimientos</h2>';
@@ -750,7 +753,11 @@ function buildCierre(mes){
   const ventasL = S.movs.filter(m => m.tipo === 'venta' && inMes(m));
   const ventas = ventasL.reduce((a,m) => a + usd(m), 0);
   const compras = S.movs.filter(m => m.tipo === 'compra' && inMes(m)).reduce((a,m) => a + usd(m), 0);
-  const gastosL = S.movs.filter(m => m.tipo === 'gasto' && inMes(m));
+  const gastosAll = S.movs.filter(m => m.tipo === 'gasto' && inMes(m));
+  const gastosL = gastosAll.filter(m => NOOP.indexOf(m.cat) < 0);
+  const personalL = gastosAll.filter(m => NOOP.indexOf(m.cat) >= 0);
+  const personal = personalL.reduce((a,m) => a + usd(m), 0);
+  const porCatP = {}; personalL.forEach(m => { porCatP[m.cat] = (porCatP[m.cat] || 0) + usd(m); });
   const porCat = {}; gastosL.forEach(m => { const k = m.cat || 'Otros'; porCat[k] = (porCat[k] || 0) + usd(m); });
   const gastos = gastosL.reduce((a,m) => a + usd(m), 0);
   const util = ventas - compras - gastos;
@@ -769,7 +776,7 @@ function buildCierre(mes){
   const top = Object.keys(cli).map(n => ({n, v:cli[n]})).sort((a,b) => b.v - a.v).slice(0,5);
   let cobrar = 0, pagar = 0;
   S.movs.filter(m => m.pagado === false).forEach(m => { if(m.signo > 0) cobrar += usd(m); else pagar += usd(m); });
-  return {mes, ventas, compras, gastos, porCat, util, margen, cajas, top, cobrar, pagar, nVentas: ventasL.length};
+  return {mes, ventas, compras, gastos, porCat, personal, porCatP, util, margen, cajas, top, cobrar, pagar, nVentas: ventasL.length};
 }
 function cierreText(c){
   const L = [];
@@ -781,6 +788,7 @@ function cierreText(c){
   Object.keys(c.porCat).forEach(k => L.push('Gasto ' + k + ': − ' + money(c.porCat[k],'USD')));
   L.push('Total gastos: − ' + money(c.gastos,'USD'));
   L.push('GANANCIA: ' + money(c.util,'USD') + (c.ventas > 0 ? ' (' + nf.format(c.margen) + '% de las ventas)' : ''));
+  if(c.personal > 0){ L.push('Aparte (no restan a la ganancia): ' + Object.keys(c.porCatP).map(k => k + ' ' + money(c.porCatP[k],'USD')).join(', ')); }
   L.push('');
   L.push('MOVIMIENTO DE CAJAS');
   c.cajas.forEach(x => L.push(x.n + ': inicio ' + money(x.ini,x.m) + ' | entró ' + money(x.ent,x.m) + ' | salió ' + money(x.sal,x.m) + ' | final ' + money(x.fin,x.m)));
@@ -802,6 +810,7 @@ function openCierre(){
        row('Compras', '− ' + money(c.compras,'USD')) +
        Object.keys(c.porCat).map(k => row('Gasto: ' + esc(k), '− ' + money(c.porCat[k],'USD'))).join('') +
        row('Ganancia' + (c.ventas > 0 ? ' (' + nf.format(c.margen) + '%)' : ''), money(c.util,'USD'), c.util < 0 ? 'neg' : 'pos') + '</div>';
+  if(c.personal > 0) h += '<div class="hint">Aparte, sin restar a la ganancia: ' + Object.keys(c.porCatP).map(k => esc(k) + ' ' + money(c.porCatP[k],'USD')).join(' · ') + '</div>';
   h += '<h2>Movimiento de cajas</h2><div class="list">' + c.cajas.map(x =>
        '<div class="card"><b>' + x.n + '</b>' +
        '<div class="kv"><span>Al empezar el mes</span><span>' + money(x.ini,x.m) + '</span></div>' +
@@ -835,6 +844,26 @@ async function resolveNames(){
   }catch(e){}
 }
 
+/* ---------- importar historial ---------- */
+async function doImport(file){
+  try{
+    const d = JSON.parse(await file.text());
+    if(!d.movs || !d.movs.length) return toast('Archivo no válido');
+    const ok = await askConfirm('Se cargarán ' + d.movs.length + ' movimientos y ' + (d.clientes||[]).length + ' clientes del historial de Zelle. Si ya lo importaste antes, no se duplican. ¿Continuar?','Importar');
+    if(!ok) return;
+    toast('Importando… no cierres la app');
+    if(d.reemplaza){ const r = d.reemplaza;
+      for(const m of S.movs.filter(m => m.tipo === r.tipo && m.caja === r.caja && m.fecha === r.fecha && Math.abs((m.monto||0) - r.monto) < 0.005 && String(m.id).indexOf('imp-') !== 0)){ await S.db.collection('movs').doc(m.id).delete(); } }
+    const me = S.uid || '';
+    const jobs = [];
+    (d.clientes||[]).forEach(c => { const id = c.id; const o = Object.assign({}, c); delete o.id; o.por = me; jobs.push(() => S.db.collection('clientes').doc(id).set(o)); });
+    d.movs.forEach(m => { const id = m.id; const o = Object.assign({}, m); delete o.id; o.por = me; jobs.push(() => S.db.collection('movs').doc(id).set(o)); });
+    for(let i = 0; i < jobs.length; i += 20) await Promise.all(jobs.slice(i, i + 20).map(f => f()));
+    toast('Listo: historial cargado');
+  }catch(e){ toast('No se pudo importar'); }
+}
+document.addEventListener('change', e => { if(e.target && e.target.id === 'impFile' && e.target.files[0]) doImport(e.target.files[0]); });
+
 /* ---------- eventos ---------- */
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]'); if(!el) return;
@@ -850,6 +879,7 @@ document.addEventListener('click', e => {
     case 'cobrar': if(!S.canWrite) return toast('Solo lectura'); openCobrar(id); break;
     case 'cliver': openCliVer(id); break;
     case 'cierre': openCierre(); break;
+    case 'importar': { const fi = $('#impFile'); if(fi){ fi.value=''; fi.click(); } break; }
     case 'salir': askConfirm('¿Cerrar sesión en este teléfono?','Salir').then(ok => { if(ok && S.user && S.user.signOut) S.user.signOut().then(() => location.reload()); }); break;
     case 'gocaja': S.fCaja = id; S.mes = ''; setTab('mov'); break;
     case 'fcaja': S.fCaja = id; fillMov(); break;
