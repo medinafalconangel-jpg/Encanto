@@ -143,14 +143,14 @@ a{color:var(--rose)}
 .fab:active{transform:scale(.9) rotate(90deg)}
 .fab{transition:transform .3s var(--spring),box-shadow .2s}
 .sheetwrap:not([hidden]){animation:fadeIn .22s ease}
-.sheetwrap:not([hidden]) .sheet{animation:sheetUp .38s var(--ease)}
+.sheetwrap:not([hidden]) .sheet{animation:sheetUp .48s cubic-bezier(.16,1,.3,1)}
 @media (min-width:700px){.sheetwrap:not([hidden]) .sheet{animation:popIn .3s var(--ease)}}
 .sheetwrap.closing{animation:fadeOut .2s ease forwards}
-.sheetwrap.closing .sheet{animation:sheetDown .22s ease-in forwards}
+.sheetwrap.closing .sheet{animation:sheetDown .26s cubic-bezier(.5,0,.75,0) forwards}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes fadeOut{to{opacity:0}}
-@keyframes sheetUp{from{transform:translateY(60%);opacity:.4}to{transform:none;opacity:1}}
-@keyframes sheetDown{to{transform:translateY(40%);opacity:0}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes sheetDown{to{transform:translateY(100%)}}
 @keyframes popIn{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
 .sheet::before{content:'';display:block;width:38px;height:5px;border-radius:3px;background:var(--line);margin:-6px auto 12px}
 @media (min-width:700px){.sheet::before{display:none}}
@@ -164,6 +164,29 @@ a{color:var(--rose)}
 .toast.bye{transition:opacity .25s,transform .25s;opacity:0;transform:translate(-50%,8px)}
 .tab.on{transition:background-color .25s,color .25s}
 .big.count{display:inline-block}
+/* transiciones suaves */
+header{view-transition-name:hdr}.tabbar{view-transition-name:tabs}#main{view-transition-name:main}
+::view-transition-old(root),::view-transition-new(root){animation:none}
+::view-transition-group(main){animation-duration:.34s;animation-timing-function:cubic-bezier(.22,.9,.3,1)}
+::view-transition-old(main){animation:.3s cubic-bezier(.4,0,.6,1) both vtOutL}
+::view-transition-new(main){animation:.38s cubic-bezier(.22,.9,.3,1) both vtInL}
+html[data-vt="r"]::view-transition-old(main){animation-name:vtOutR}
+html[data-vt="r"]::view-transition-new(main){animation-name:vtInR}
+@keyframes vtOutL{to{opacity:0;transform:translateX(-14%)}}
+@keyframes vtInL{from{opacity:0;transform:translateX(18%)}}
+@keyframes vtOutR{to{opacity:0;transform:translateX(14%)}}
+@keyframes vtInR{from{opacity:0;transform:translateX(-18%)}}
+.sl-l{animation:slIn .4s cubic-bezier(.22,.9,.3,1) both}
+.sl-f{animation:rise .35s cubic-bezier(.22,.9,.3,1) both}
+.sl-r{animation:slInR .4s cubic-bezier(.22,.9,.3,1) both}
+@keyframes slIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes slInR{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.cnav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px}
+.cnav .ct{text-align:center}.cnav .ct b{font-size:19px}.cnav .ct .lbl{text-transform:uppercase;letter-spacing:.8px;font-size:11px}
+.iconbtn[disabled]{opacity:.3}
+.cseg{justify-content:center}
+html{scroll-behavior:smooth}
+.tab{position:relative}
 @media (prefers-reduced-motion:reduce){*,*::before{animation:none !important;transition:none !important}#splash .fl path,#splash .nm,#splash .tg{opacity:1}}
 </style>
 </head>
@@ -311,6 +334,39 @@ function toast(msg){
   setTimeout(() => t.classList.add('bye'), 2300);
   setTimeout(() => t.remove(), 2600);
 }
+function slideList(dir, fn){
+  fn();
+  document.querySelectorAll('#movList, #res .card.mstats, #res .monthnav .m').forEach(el => { el.classList.remove('sl-l','sl-r'); void el.offsetWidth; el.classList.add('sl-' + dir); });
+}
+/* deslizar entre pestañas */
+(() => {
+  let x0 = 0, y0 = 0, t0 = 0, ok = false;
+  document.addEventListener('touchstart', e => {
+    const t = e.target;
+    ok = e.touches.length === 1 && !t.closest('.sheetwrap, .chips, .seg, input, select, textarea, .tabbar, header');
+    if(!ok) return; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now();
+  }, {passive:true});
+  document.addEventListener('touchend', e => {
+    if(!ok) return; ok = false;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    if(Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6 || Date.now() - t0 > 600) return;
+    const i = TAB_ORDER.indexOf(S.tab) + (dx < 0 ? 1 : -1);
+    if(i >= 0 && i < TAB_ORDER.length) setTab(TAB_ORDER[i]);
+  }, {passive:true});
+})();
+/* bajar el formulario con el dedo para cerrarlo */
+['m1','m2'].forEach(id => {
+  const w = document.getElementById(id), sh = w.querySelector('.sheet');
+  let y0 = 0, dy = 0, drag = false;
+  sh.addEventListener('touchstart', e => { if(sh.scrollTop > 0 || e.target.closest('input,select,textarea')) { drag = false; return; } drag = true; dy = 0; y0 = e.touches[0].clientY; sh.style.transition = 'none'; }, {passive:true});
+  sh.addEventListener('touchmove', e => { if(!drag) return; dy = Math.max(0, e.touches[0].clientY - y0); if(dy > 0){ sh.style.transform = 'translateY(' + dy + 'px)'; w.style.background = 'rgba(20,24,18,' + Math.max(0, .45 - dy / 900) + ')'; } }, {passive:true});
+  sh.addEventListener('touchend', () => {
+    if(!drag) return; drag = false;
+    sh.style.transition = 'transform .32s cubic-bezier(.22,.9,.3,1)';
+    if(dy > 110){ sh.style.transform = 'translateY(100%)'; setTimeout(() => { sh.style.transform = ''; sh.style.transition = ''; w.style.background = ''; w.hidden = true; sh.innerHTML = ''; if(id === 'm1'){ M.f = null; M.fields = null; M.kind = ''; } }, 260); }
+    else { sh.style.transform = ''; w.style.background = ''; setTimeout(() => { sh.style.transition = ''; }, 330); }
+  });
+});
 const SPLASH_T0 = Date.now();
 let splashDone = false;
 function hideSplash(){
@@ -338,13 +394,29 @@ function updateBanner(){
   bcvPaint();
 }
 
+const TAB_ORDER = ['res','mov','cli'];
+function slideMain(dir, fn){
+  const m = $('#main');
+  if(document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+    document.documentElement.dataset.vt = dir;
+    const t = document.startViewTransition(() => fn());
+    t.finished.finally(() => { delete document.documentElement.dataset.vt; });
+    return;
+  }
+  fn();
+  m.classList.remove('sl-l','sl-r'); void m.offsetWidth; m.classList.add('sl-' + dir);
+}
 function setTab(t){
+  if(t === S.tab){ window.scrollTo({top:0, behavior:'smooth'}); return; }
+  const dir = TAB_ORDER.indexOf(t) > TAB_ORDER.indexOf(S.tab) ? 'l' : 'r';
+  slideMain(dir, () => setTabNow(t));
+}
+function setTabNow(t){
   S.tab = t;
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
   buildShell();
   fill();
   window.scrollTo(0,0);
-  animMain();
 }
 function buildShell(){
   const main = $('#main');
@@ -438,7 +510,7 @@ function fillRes(){
   h += '<div class="monthnav"><button class="iconbtn" data-act="resprev" aria-label="Mes anterior">‹</button>' +
        '<div class="m">' + esc(mlabel(S.mes)) + '</div>' +
        '<button class="iconbtn" data-act="resnext" aria-label="Mes siguiente">›</button></div>';
-  h += '<div class="card"><div class="stats">' +
+  h += '<div class="card mstats"><div class="stats">' +
        '<div class="stat"><div class="lbl">Ventas</div><div class="v pos">' + money(st.ventas,'USD') + '</div></div>' +
        '<div class="stat"><div class="lbl">Compras</div><div class="v">' + money(st.compras,'USD') + '</div></div>' +
        '<div class="stat"><div class="lbl">Gastos</div><div class="v">' + money(st.gastos,'USD') + '</div></div>' +
@@ -593,7 +665,7 @@ function closeSheet(n){
   const w = $('#m' + n); if(n === 1){ M.f = null; M.fields = null; M.kind = ''; }
   if(w.hidden) return;
   w.classList.add('closing');
-  setTimeout(() => { w.classList.remove('closing'); if(!w.classList.contains('reopen')){ w.hidden = true; $('#s' + n).innerHTML = ''; } w.classList.remove('reopen'); }, 210);
+  setTimeout(() => { w.classList.remove('closing'); if(!w.classList.contains('reopen')){ w.hidden = true; $('#s' + n).innerHTML = ''; } w.classList.remove('reopen'); }, 250);
 }
 ['m1','m2'].forEach(id => {
   $('#' + id).addEventListener('click', e => { if(e.target.id === id) closeSheet(id === 'm1' ? 1 : 2); });
@@ -1003,7 +1075,7 @@ function rangoAnio(y, hasta){
   });
   o.util = o.ventas - o.compras - o.gastos; return o;
 }
-function openCierre(forzar){
+function openCierre(forzar, dir){
   const mes = forzar || S.mes || ymd(new Date()).slice(0,7);
   const esAnio = mes.length === 4;
   const c = buildCierre(mes);
@@ -1028,7 +1100,15 @@ function openCierre(forzar){
   }
   M.kind = 'view';
   const row = (a,b,cls) => '<div class="kv"><span>' + a + '</span><b class="' + (cls||'') + '">' + b + '</b></div>';
-  let h = '<h3>Estado financiero · ' + esc(mlabel(mes)) + '</h3>';
+  const prevP = esAnio ? String(parseInt(mes,10) - 1) : shiftMes(mes,-1), nextP = esAnio ? String(parseInt(mes,10) + 1) : shiftMes(mes,1);
+  const hoyP = esAnio ? ymd(new Date()).slice(0,4) : ymd(new Date()).slice(0,7);
+  const minP = S.movs.reduce((a,m) => { const f = String(m.fecha || ''); return f && f < a ? f : a; }, '9999');
+  const canPrev = (esAnio ? prevP : prevP) >= minP.slice(0, esAnio ? 4 : 7), canNext = nextP <= hoyP;
+  let h = '<div class="cnav"><button class="iconbtn" data-act="cierrenav" data-dir="r" data-id="' + prevP + '"' + (canPrev ? '' : ' disabled') + ' aria-label="Anterior">‹</button>' +
+    '<div class="ct"><div class="lbl">' + (esAnio ? 'Estado del año' : 'Estado del mes') + '</div><b>' + esc(esAnio ? mes : mlabel(mes)) + '</b></div>' +
+    '<button class="iconbtn" data-act="cierrenav" data-dir="l" data-id="' + nextP + '"' + (canNext ? '' : ' disabled') + ' aria-label="Siguiente">›</button></div>' +
+    '<div class="seg cseg"><button class="chip ' + (esAnio ? '' : 'on') + '" data-act="cierrenav" data-id="' + (esAnio ? (mes === hoyP.slice(0,4) ? ymd(new Date()).slice(0,7) : mes + '-12') : mes) + '">Mes</button><button class="chip ' + (esAnio ? 'on' : '') + '" data-act="cierrenav" data-id="' + mes.slice(0,4) + '">Año</button></div>' +
+    '<div class="cbody' + (dir ? ' sl-' + dir : '') + '">';
   h += '<h2 style="margin-top:4px">Resultados (en $)</h2><div class="card">' +
        row('Ventas (' + c.nVentas + ')', money(c.ventas,'USD'), 'pos') +
        row('Compras', '− ' + money(c.compras,'USD')) +
@@ -1047,8 +1127,9 @@ function openCierre(forzar){
   h += '<h2>Pendientes hoy</h2><div class="card">' + row('Por cobrar', money(c.cobrar,'USD'), 'pend') + row('Por pagar', money(c.pagar,'USD'), 'pend') + '</div>';
   if(c.top.length) h += '<h2>Mejores clientes</h2><div class="card">' + c.top.map(t => row(esc(t.n), money(t.v,'USD'))).join('') + '</div>';
   h += '<div class="hint" style="margin-top:8px">Las compras y gastos se cuentan en el periodo en que ocurrieron. Los bolívares se pasan a dólares con la tasa de cada registro.</div>';
-  h += '<div class="actions"><button class="btn sec" id="bCopy">Copiar resumen</button><button class="btn" id="bClose">Cerrar</button></div>';
-  openSheet(1, h);
+  h += '</div><div class="actions"><button class="btn sec" id="bCopy">Copiar resumen</button><button class="btn" id="bClose">Cerrar</button></div>';
+  const sh = $('#s1');
+  if(dir && !$('#m1').hidden){ sh.innerHTML = h; M.kind = 'view'; } else openSheet(1, h);
   $('#bClose').onclick = () => closeSheet(1);
   $('#bCopy').onclick = async () => {
     try{ await navigator.clipboard.writeText(LAST_CIERRE); toast('Resumen copiado'); }
@@ -1110,27 +1191,222 @@ function openCuadrar(){
   };
 }
 
-/* ---------- exportar a Excel (CSV) ---------- */
-async function exportCsv(){
-  if(!S.movs.length) return toast('No hay movimientos');
-  const n = v => (v == null || v === '') ? '' : String(Math.round(v * 100) / 100).replace('.',',');
-  const q = v => '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"';
-  const rows = [['Fecha','Tipo','Caja','Moneda','Entrada','Salida','Tasa Bs/$','Equivalente en $','Cliente','Proveedor','Categoría','Detalle','Estado']];
-  sorted(S.movs).reverse().forEach(m => {
-    const t = (TIPOS[m.tipo] || {n:m.tipo}).n;
-    rows.push([m.fecha, t, m.caja ? CAJAS[m.caja].n : '', m.moneda || '', m.signo > 0 ? n(m.monto) : '', m.signo > 0 ? '' : n(m.monto), n(m.tasa), n((m.signo || 1) * usd(m)),
-      cliName(m) || '', m.tercero || '', m.cat || '', m.desc || '', m.pagado === false ? 'Pendiente' : 'Pagado']);
+/* ---------- exportar (Excel / Numbers) ---------- */
+const XL = (() => {
+  const enc = new TextEncoder();
+  const crcT = (() => { const t = new Uint32Array(256); for(let n = 0; n < 256; n++){ let c = n; for(let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc = b => { let c = 0xFFFFFFFF; for(let i = 0; i < b.length; i++) c = crcT[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  function zip(files){
+    const parts = [], cen = []; let off = 0;
+    const d = new Date(), dt = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(), tm = (d.getHours() << 11) | (d.getMinutes() << 5);
+    files.forEach(f => {
+      const name = enc.encode(f.name), data = enc.encode(f.data), c = crc(data);
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(8,0,true);
+      h.setUint16(10,tm,true); h.setUint16(12,dt,true); h.setUint32(14,c,true); h.setUint32(18,data.length,true); h.setUint32(22,data.length,true);
+      h.setUint16(26,name.length,true); h.setUint16(28,0,true);
+      parts.push(new Uint8Array(h.buffer), name, data);
+      const e = new DataView(new ArrayBuffer(46));
+      e.setUint32(0,0x02014b50,true); e.setUint16(4,20,true); e.setUint16(6,20,true); e.setUint16(8,0x0800,true); e.setUint16(10,0,true);
+      e.setUint16(12,tm,true); e.setUint16(14,dt,true); e.setUint32(16,c,true); e.setUint32(20,data.length,true); e.setUint32(24,data.length,true);
+      e.setUint16(28,name.length,true); e.setUint32(42,off,true);
+      cen.push(new Uint8Array(e.buffer), name);
+      off += 30 + name.length + data.length;
+    });
+    const cs = cen.reduce((a,b) => a + b.length, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0,0x06054b50,true); end.setUint16(8,files.length,true); end.setUint16(10,files.length,true); end.setUint32(12,cs,true); end.setUint32(16,off,true);
+    return new Blob([...parts, ...cen, new Uint8Array(end.buffer)], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  }
+  const x = v => String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,'');
+  const col = i => { let s = ''; i++; while(i){ const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+  // estilos: 0 normal,1 título,2 subtítulo,3 encabezado,4 texto,5 fecha,6 $,7 Bs,8 total texto,9 total $,10 número,11 total Bs,12 sección,13 %
+  const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<numFmts count="4"><numFmt numFmtId="164" formatCode="&quot;$&quot; #,##0.00;[Red]-&quot;$&quot; #,##0.00"/><numFmt numFmtId="165" formatCode="&quot;Bs&quot; #,##0.00;[Red]-&quot;Bs&quot; #,##0.00"/><numFmt numFmtId="166" formatCode="dd/mm/yyyy"/><numFmt numFmtId="167" formatCode="0.0%"/></numFmts>' +
+    '<fonts count="5"><font><sz val="11"/><color rgb="FF3A3B38"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FF3A3B38"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="16"/><color rgb="FF454A42"/><name val="Calibri"/></font><font><sz val="10"/><color rgb="FF7C8078"/><name val="Calibri"/></font></fonts>' +
+    '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF5F6D57"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE9EDE3"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+    '<borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FFE4E5DC"/></bottom><diagonal/></border><border><left/><right/><top style="thin"><color rgb="FF5F6D57"/></top><bottom/><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="14">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+    '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+    '<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+    '<xf numFmtId="0" fontId="2" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/>' +
+    '<xf numFmtId="166" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left"/></xf>' +
+    '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>' +
+    '<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="3" borderId="2" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>' +
+    '<xf numFmtId="164" fontId="1" fillId="3" borderId="2" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"/>' +
+    '<xf numFmtId="4" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>' +
+    '<xf numFmtId="165" fontId="1" fillId="3" borderId="2" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+    '<xf numFmtId="167" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>' +
+    '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  const serial = s => { const p = String(s).split('-').map(Number); return (Date.UTC(p[0], p[1] - 1, p[2]) - Date.UTC(1899, 11, 30)) / 86400000; };
+  // hoja: {name, widths:[], rows:[[cell]], freeze:rowIndex}; cell: null | {v, s, f, d:true(fecha)}
+  function build(sheets){
+    const sst = [], sidx = {};
+    const si = t => { t = String(t); if(sidx[t] == null){ sidx[t] = sst.length; sst.push(t); } return sidx[t]; };
+    const files = [];
+    sheets.forEach((sh, n) => {
+      let rowsXml = '';
+      sh.rows.forEach((r, ri) => {
+        let cs = '';
+        (r || []).forEach((c, ci) => {
+          if(c == null) return;
+          if(typeof c !== 'object') c = {v:c};
+          const ref = col(ci) + (ri + 1), s = c.s != null ? ' s="' + c.s + '"' : '';
+          if(c.f) cs += '<c r="' + ref + '"' + s + '><f>' + x(c.f) + '</f>' + (c.v != null ? '<v>' + c.v + '</v>' : '') + '</c>';
+          else if(c.d && c.v) cs += '<c r="' + ref + '"' + s + '><v>' + serial(c.v) + '</v></c>';
+          else if(typeof c.v === 'number' && isFinite(c.v)) cs += '<c r="' + ref + '"' + s + '><v>' + (Math.round(c.v * 10000) / 10000) + '</v></c>';
+          else if(c.v != null && c.v !== '') cs += '<c r="' + ref + '"' + s + ' t="s"><v>' + si(c.v) + '</v></c>';
+          else if(c.s != null) cs += '<c r="' + ref + '"' + s + '/>';
+        });
+        rowsXml += '<row r="' + (ri + 1) + '"' + (ri === 0 ? ' ht="26" customHeight="1"' : '') + '>' + cs + '</row>';
+      });
+      const pane = sh.freeze ? '<pane ySplit="' + sh.freeze + '" topLeftCell="A' + (sh.freeze + 1) + '" activePane="bottomLeft" state="frozen"/>' : '';
+      const cols = '<cols>' + sh.widths.map((w, i) => '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>').join('') + '</cols>';
+      files.push({name:'xl/worksheets/sheet' + (n + 1) + '.xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0" showGridLines="0">' + pane + '</sheetView></sheetViews><sheetFormatPr defaultRowHeight="16"/>' + cols + '<sheetData>' + rowsXml + '</sheetData><pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>'});
+    });
+    const names = sheets.map(s => x(s.name.slice(0,31)));
+    return zip([
+      {name:'[Content_Types].xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>' + sheets.map((s,i) => '<Override PartName="/xl/worksheets/sheet' + (i+1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('') + '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>'},
+      {name:'_rels/.rels', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>'},
+      {name:'docProps/core.xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>Encanto Flores y Detalles</dc:title><dc:creator>Encanto</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">' + new Date().toISOString().slice(0,19) + 'Z</dcterms:created></cp:coreProperties>'},
+      {name:'xl/workbook.xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + names.map((n,i) => '<sheet name="' + n + '" sheetId="' + (i+1) + '" r:id="rId' + (i+1) + '"/>').join('') + '</sheets></workbook>'},
+      {name:'xl/_rels/workbook.xml.rels', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map((s,i) => '<Relationship Id="rId' + (i+1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i+1) + '.xml"/>').join('') + '<Relationship Id="rId' + (sheets.length+1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId' + (sheets.length+2) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>'},
+      {name:'xl/styles.xml', data:styles},
+      {name:'xl/sharedStrings.xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="' + sst.length + '" uniqueCount="' + sst.length + '">' + sst.map(t => '<si><t xml:space="preserve">' + x(t) + '</t></si>').join('') + '</sst>'}
+    ].concat(files));
+  }
+  return {build, col};
+})();
+
+function periodoLabel(per){ return per === '' ? 'Todo el historial' : mlabel(per); }
+function inPer(m, per){ return String(m.fecha || '').indexOf(per) === 0; }
+function head(title, per, cols){
+  const hoy = new Date().toLocaleDateString('es-VE',{day:'numeric',month:'long',year:'numeric'});
+  return [[{v:'Encanto Flores y Detalles · ' + title, s:1}], [{v:periodoLabel(per) + ' · Generado el ' + hoy, s:2}], [], cols.map(c => ({v:c, s:3}))];
+}
+function hojaMovs(per){
+  const C = XL.col;
+  const rows = head('Movimientos', per, ['Fecha','Tipo','Caja','Detalle','Cliente / Proveedor','Categoría','Monto','Tasa Bs/$','Entrada ($)','Salida ($)','Estado']);
+  const list = sorted(S.movs.filter(m => inPer(m, per))).reverse();
+  const r0 = rows.length + 1;
+  list.forEach(m => {
+    const eq = usd(m), sal = m.signo < 0;
+    rows.push([{v:m.fecha, d:true, s:5}, {v:(TIPOS[m.tipo] || {n:m.tipo}).n, s:4}, {v:m.caja ? CAJAS[m.caja].n : (m.signo > 0 ? 'Por cobrar' : 'Por pagar'), s:4},
+      {v:m.desc || '', s:4}, {v:(m.tipo === 'venta' ? cliName(m) : m.tercero) || '', s:4}, {v:m.cat || '', s:4},
+      {v:(m.signo || 1) * (m.monto || 0), s:m.moneda === 'VES' ? 7 : 6}, {v:m.tasa || '', s:10},
+      {v:sal ? '' : eq, s:6}, {v:sal ? eq : '', s:6}, {v:m.pagado === false ? 'Pendiente' : 'Pagado', s:4}]);
   });
-  const csv = '﻿' + rows.map(r => r.map(q).join(';')).join('\r\n');
-  const name = 'encanto-movimientos-' + ymd(new Date()) + '.csv';
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const r1 = rows.length;
+  const tin = list.filter(m => m.signo > 0).reduce((a,m) => a + usd(m), 0), tout = list.filter(m => m.signo < 0).reduce((a,m) => a + usd(m), 0);
+  rows.push([{v:'Totales (' + list.length + ' movimientos)', s:8}, {s:8},{s:8},{s:8},{s:8},{s:8},{s:8},{s:8},
+    {f:'SUM(' + C(8) + r0 + ':' + C(8) + r1 + ')', v:r2(tin), s:9}, {f:'SUM(' + C(9) + r0 + ':' + C(9) + r1 + ')', v:r2(tout), s:9}, {s:8}]);
+  rows.push([{v:'Neto', s:8},{s:8},{s:8},{s:8},{s:8},{s:8},{s:8},{s:8},{f:C(8) + (r1+1) + '-' + C(9) + (r1+1), v:r2(tin - tout), s:9},{s:8},{s:8}]);
+  rows.push([]); rows.push([{v:'Los montos en Bs se pasan a dólares con la tasa guardada en cada movimiento.', s:2}]);
+  return {name:'Movimientos', widths:[12,16,14,38,24,20,16,11,14,14,12], rows, freeze:4};
+}
+function hojaEstado(per){
+  const c = buildCierre(per);
+  const rows = head('Estado financiero', per, ['Concepto','Monto ($)']);
+  const L = (a,v,s) => rows.push([{v:a, s:s || 4}, {v:v, s:s === 8 ? 9 : 6}]);
+  const sec = t => { rows.push([]); rows.push([{v:t, s:12}]); };
+  L('Ventas (' + c.nVentas + ')', c.ventas); L('Compras', -c.compras);
+  Object.keys(c.porCat).forEach(k => L('Gasto: ' + k, -c.porCat[k]));
+  L('Ganancia', c.util, 8);
+  rows.push([{v:'Margen sobre ventas', s:4}, {v:c.ventas ? c.util / c.ventas : 0, s:13}]);
+  if(c.retiros > 0 || c.aportes > 0){ sec('Dueños'); Object.keys(c.porRet).forEach(k => L('Retiro: ' + k, -c.porRet[k])); if(c.aportes) L('Aportes del dueño', c.aportes); L('Queda en el negocio', c.util - c.retiros + c.aportes, 8); }
+  if(c.personal > 0){ sec('Aparte (no restan a la ganancia)'); Object.keys(c.porCatP).forEach(k => L(k, -c.porCatP[k])); }
+  sec('Movimiento de cajas');
+  rows.push(['Caja','Al empezar','Entró','Salió','Saldo final'].map(t => ({v:t, s:3})));
+  c.cajas.forEach(k => { const s = k.m === 'VES' ? 7 : 6; rows.push([{v:k.n, s:4}, {v:k.ini, s}, {v:k.ent, s}, {v:-k.sal, s}, {v:k.fin, s}]); });
+  sec('Pendientes hoy'); L('Por cobrar', c.cobrar); L('Por pagar', -c.pagar);
+  if(c.top.length){ sec('Mejores clientes'); c.top.forEach(t => L(t.n, t.v)); }
+  rows.push([]); rows.push([{v:'Ganancia = ventas − compras − gastos del negocio. Bolívares convertidos con la tasa de cada registro.', s:2}]);
+  return {name:'Estado financiero', widths:[38,16,16,16,16], rows, freeze:0};
+}
+function hojaMeses(per){
+  const rows = head('Mes por mes', per, ['Mes','Ventas','Compras','Gastos','Ganancia','Retiros del dueño']);
+  const meses = Array.from(new Set(S.movs.filter(m => inPer(m, per)).map(m => String(m.fecha).slice(0,7)))).sort();
+  const r0 = rows.length + 1;
+  meses.forEach(k => { const b = buildCierre(k); rows.push([{v:mlabel(k), s:4}, {v:b.ventas, s:6}, {v:b.compras, s:6}, {v:b.gastos, s:6}, {v:b.util, s:6}, {v:b.retiros, s:6}]); });
+  const r1 = rows.length, C = XL.col;
+  rows.push([{v:'Total', s:8}].concat([1,2,3,4,5].map(i => ({f:'SUM(' + C(i) + r0 + ':' + C(i) + r1 + ')', s:9}))));
+  return {name:'Mes por mes', widths:[20,15,15,15,15,18], rows, freeze:4};
+}
+function hojaClientes(per){
+  const rows = head('Clientes', per, ['Cliente','Teléfono','Compras','Total comprado ($)','Pendiente ($)','Última compra']);
+  const o = {};
+  S.movs.forEach(m => { if(m.tipo !== 'venta' || !inPer(m, per)) return; const n = cliName(m) || 'Sin cliente (mostrador)'; const c = o[n] || (o[n] = {n, q:0, t:0, p:0, l:'', tel:''}); c.q++; c.t += usd(m); if(m.pagado === false) c.p += usd(m); if(String(m.fecha) > c.l) c.l = m.fecha; const cc = cliById(m.clienteId); if(cc) c.tel = cc.telefono || ''; });
+  const list = Object.keys(o).map(k => o[k]).sort((a,b) => b.t - a.t);
+  const r0 = rows.length + 1;
+  list.forEach(c => rows.push([{v:c.n, s:4}, {v:c.tel, s:4}, {v:c.q, s:4}, {v:c.t, s:6}, {v:c.p, s:6}, {v:c.l, d:true, s:5}]));
+  const r1 = rows.length, C = XL.col;
+  rows.push([{v:'Total (' + list.length + ' clientes)', s:8}, {s:8}, {f:'SUM(C' + r0 + ':C' + r1 + ')', s:8}, {f:'SUM(D' + r0 + ':D' + r1 + ')', s:9}, {f:'SUM(E' + r0 + ':E' + r1 + ')', s:9}, {s:8}]);
+  return {name:'Clientes', widths:[30,16,10,18,15,14], rows, freeze:4};
+}
+function hojaProv(per){
+  const rows = head('Proveedores', per, ['Proveedor','Compras','Total comprado ($)','Pendiente ($)','Última compra']);
+  const o = {};
+  S.movs.forEach(m => { if(m.tipo !== 'compra' || !inPer(m, per)) return; const n = (m.tercero || '').trim() || 'Sin proveedor'; const k = n.toLowerCase(); const c = o[k] || (o[k] = {n, q:0, t:0, p:0, l:''}); c.q++; c.t += usd(m); if(m.pagado === false) c.p += usd(m); if(String(m.fecha) > c.l) c.l = m.fecha; });
+  const list = Object.keys(o).map(k => o[k]).sort((a,b) => b.t - a.t);
+  const r0 = rows.length + 1;
+  list.forEach(c => rows.push([{v:c.n, s:4}, {v:c.q, s:4}, {v:c.t, s:6}, {v:c.p, s:6}, {v:c.l, d:true, s:5}]));
+  const r1 = rows.length;
+  rows.push([{v:'Total (' + list.length + ' proveedores)', s:8}, {f:'SUM(B' + r0 + ':B' + r1 + ')', s:8}, {f:'SUM(C' + r0 + ':C' + r1 + ')', s:9}, {f:'SUM(D' + r0 + ':D' + r1 + ')', s:9}, {s:8}]);
+  return {name:'Proveedores', widths:[32,10,18,15,14], rows, freeze:4};
+}
+const EXP_OPTS = [
+  ['estado','Estado financiero','Resultados, dueños, cajas y pendientes'],
+  ['movs','Movimientos','Cada registro con fecha, caja y montos'],
+  ['meses','Mes por mes','Ventas, gastos y ganancia de cada mes'],
+  ['clientes','Clientes','Cuánto compró cada cliente'],
+  ['prov','Proveedores','Cuánto le compraste a cada uno']
+];
+function expFields(f){
+  const meses = Array.from(new Set(S.movs.map(m => String(m.fecha).slice(0,7)).filter(Boolean))).sort().reverse();
+  const anios = Array.from(new Set(meses.map(m => m.slice(0,4)))).sort().reverse();
+  let h = '<h2 style="margin-top:4px">Periodo</h2><div class="seg">' +
+    [['mes','Un mes'],['anio','Un año'],['todo','Todo']].map(p => '<button type="button" class="chip ' + (f.tipoPer === p[0] ? 'on' : '') + '" data-act="exper" data-id="' + p[0] + '">' + p[1] + '</button>').join('') + '</div>';
+  if(f.tipoPer === 'mes') h += '<label>Mes<select name="mes">' + meses.map(m => '<option value="' + m + '"' + (f.mes === m ? ' selected' : '') + '>' + esc(mlabel(m)) + '</option>').join('') + '</select></label>';
+  if(f.tipoPer === 'anio') h += '<label>Año<select name="anio">' + anios.map(a => '<option' + (f.anio === a ? ' selected' : '') + '>' + a + '</option>').join('') + '</select></label>';
+  h += '<h2>Qué incluir</h2><div class="card" style="padding:4px 14px">' + EXP_OPTS.map(o =>
+    '<label class="chk" style="margin:0;padding:11px 0;border-bottom:1px solid var(--line)"><input type="checkbox" name="inc_' + o[0] + '"' + (f['inc_' + o[0]] ? ' checked' : '') + '><span><b style="font-weight:600">' + o[1] + '</b><br><span class="hint" style="margin:0">' + o[2] + '</span></span></label>').join('') + '</div>';
+  h += '<div class="hint" style="margin-top:10px">Cada opción sale en su propia hoja, con títulos, totales y formato de moneda.</div>';
+  return h;
+}
+function openExport(){
+  const hoy = ymd(new Date());
+  M.f = {tipoPer: S.mes ? 'mes' : 'todo', mes: S.mes || hoy.slice(0,7), anio: (S.mes || hoy).slice(0,4), inc_estado:true, inc_movs:true, inc_meses:false, inc_clientes:false, inc_prov:false};
+  M.fields = expFields; M.kind = 'export'; M.rerender = [];
+  openSheet(1, '<h3>Exportar</h3><div id="fbody">' + expFields(M.f) + '</div>' +
+    '<h2>Abrir en</h2><div class="row2"><button class="btn sec expgo" data-app="Numbers"><b>Numbers</b></button><button class="btn sec expgo" data-app="Excel"><b>Excel</b></button></div>' +
+    '<div class="hint" style="margin-top:8px">Se crea un archivo .xlsx, que abre igual en Numbers y en Excel. En el menú que aparece elige la app, o «Guardar en Archivos».</div>' +
+    '<div class="actions"><button class="btn sec" id="bCancel">Cerrar</button></div>');
+  $('#bCancel').onclick = () => closeSheet(1);
+  document.querySelectorAll('.expgo').forEach(b => b.onclick = () => doExport(b.dataset.app));
+}
+async function doExport(app){
+  const f = M.f; if(!f) return;
+  const per = f.tipoPer === 'mes' ? f.mes : f.tipoPer === 'anio' ? f.anio : '';
+  const sheets = [];
+  if(f.inc_estado) sheets.push(hojaEstado(per));
+  if(f.inc_meses) sheets.push(hojaMeses(per));
+  if(f.inc_movs) sheets.push(hojaMovs(per));
+  if(f.inc_clientes) sheets.push(hojaClientes(per));
+  if(f.inc_prov) sheets.push(hojaProv(per));
+  if(!sheets.length) return toast('Elige al menos una opción');
+  const blob = XL.build(sheets);
+  const name = 'Encanto ' + (per ? mlabel(per) : 'historial completo') + '.xlsx';
   try{
-    const file = new File([blob], name, {type:'text/csv'});
-    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:name}); return; }
+    const file = new File([blob], name, {type:blob.type});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:name}); toast('Listo'); return; }
   }catch(e){ if(e && e.name === 'AbortError') return; }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
-  toast('Archivo listo: ' + (rows.length - 1) + ' movimientos');
+  toast('Archivo listo para ' + app);
 }
 
 /* ---------- importar historial ---------- */
@@ -1173,16 +1449,18 @@ document.addEventListener('click', e => {
     case 'cierre': openCierre(); break;
     case 'cierreanio': openCierre((S.mes || ymd(new Date())).slice(0,4)); break;
     case 'cuadrar': openCuadrar(); break;
-    case 'exportar': exportCsv(); break;
+    case 'exportar': openExport(); break;
+    case 'exper': if(M.f && M.kind === 'export'){ M.f.tipoPer = id; $('#fbody').innerHTML = expFields(M.f); } break;
+    case 'cierrenav': openCierre(id, el.dataset.dir || 'f'); break;
     case 'importar': { const fi = $('#impFile'); if(fi){ fi.value=''; fi.click(); } break; }
     case 'salir': askConfirm('¿Cerrar sesión en este teléfono?','Salir').then(ok => { if(ok && S.user && S.user.signOut) S.user.signOut().then(() => location.reload()); }); break;
     case 'gocaja': S.fCaja = id; S.mes = ''; setTab('mov'); break;
     case 'fcaja': S.fCaja = id; fillMov(); break;
-    case 'mesprev': if(S.mes){ S.mes = shiftMes(S.mes,-1); fillMov(); } break;
-    case 'mesnext': if(S.mes){ S.mes = shiftMes(S.mes,1); fillMov(); } break;
+    case 'mesprev': if(S.mes){ slideList('r', () => { S.mes = shiftMes(S.mes,-1); fillMov(); }); } break;
+    case 'mesnext': if(S.mes){ slideList('l', () => { S.mes = shiftMes(S.mes,1); fillMov(); }); } break;
     case 'mestodo': S.mes = S.mes ? '' : ymd(new Date()).slice(0,7); fillMov(); break;
-    case 'resprev': S.mes = shiftMes(S.mes || ymd(new Date()).slice(0,7),-1); fillRes(); break;
-    case 'resnext': S.mes = shiftMes(S.mes || ymd(new Date()).slice(0,7),1); fillRes(); break;
+    case 'resprev': slideList('r', () => { S.mes = shiftMes(S.mes || ymd(new Date()).slice(0,7),-1); fillRes(); }); break;
+    case 'resnext': slideList('l', () => { S.mes = shiftMes(S.mes || ymd(new Date()).slice(0,7),1); fillRes(); }); break;
     case 'settipo':
       if(M.f && M.kind === 'mov'){
         M.f.tipo = id;
