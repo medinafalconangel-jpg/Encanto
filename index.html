@@ -100,6 +100,7 @@ label.chk{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--in
 .sheet .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .sheet .actions .btn{flex:1}
 .seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.bcvbar{font-size:13px;color:var(--muted);margin:6px 0 2px}.bcvbar b{color:var(--ink)}
 .hint{font-size:13px;color:var(--muted);margin:-4px 0 10px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;z-index:40;max-width:90vw}
 a{color:var(--rose)}
@@ -120,6 +121,7 @@ a{color:var(--rose)}
       <button class="pill" data-act="tasa" id="tasaBtn">Tasa Bs/$ <b id="tasaVal">—</b></button>
     </div>
   </header>
+  <div id="bcvBar" class="bcvbar" hidden></div>
   <div id="banner"></div>
   <main id="main"></main>
 </div>
@@ -251,6 +253,7 @@ function updateBanner(){
   b.innerHTML = h;
   $('#fab').hidden = !S.canWrite;
   $('#tasaVal').textContent = S.tasa ? nf.format(S.tasa) : 'definir';
+  bcvPaint();
 }
 
 function setTab(t){
@@ -732,11 +735,43 @@ function openCliVer(id){
 }
 
 /* ---------- tasa ---------- */
+/* ---------- tasa BCV del día ---------- */
+function bcvPaint(){
+  const b = S.bcv, el = $('#bcvBar'); if(!el) return;
+  if(!b || !(b.usd > 0)){ el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = 'BCV' + (b.fecha ? ' ' + esc(b.fecha) : '') + ': <b>$ ' + nf.format(b.usd) + '</b>' + (b.eur > 0 ? ' · <b>€ ' + nf.format(b.eur) + '</b>' : '');
+}
+async function bcvFetch(){
+  const get = async u => { const c = new AbortController(); const t = setTimeout(() => c.abort(), 8000); try{ const r = await fetch(u, {signal:c.signal, cache:'no-store'}); if(!r.ok) throw 0; return await r.json(); } finally { clearTimeout(t); } };
+  let out = null;
+  try{
+    const [u, e] = await Promise.all([get('https://ve.dolarapi.com/v1/dolares/oficial'), get('https://ve.dolarapi.com/v1/euros/oficial').catch(() => null)]);
+    const usd = Number(u.promedio || u.venta || u.compra), eur = e ? Number(e.promedio || e.venta || e.compra) : 0;
+    if(usd > 0) out = {usd, eur: eur > 0 ? eur : 0, fecha: String(u.fechaActualizacion || '').slice(0,10).split('-').reverse().slice(0,2).join('/')};
+  }catch(x){}
+  if(!out){
+    try{ const j = await get('https://bcv.today/api/rate.json'); if(Number(j.USD) > 0) out = {usd:Number(j.USD), eur:Number(j.EUR) || 0, fecha:''}; }catch(x){}
+  }
+  if(out){ S.bcv = out; try{ localStorage.setItem('bcv', JSON.stringify(out)); }catch(x){} }
+  else if(!S.bcv){ try{ S.bcv = JSON.parse(localStorage.getItem('bcv') || 'null'); }catch(x){} }
+  bcvPaint();
+  return S.bcv;
+}
 function openTasa(){
   M.f = {valor: S.tasa ? String(S.tasa).replace('.',',') : ''}; M.fields = null; M.kind = 'tasa'; M.rerender = [];
   openSheet(1, '<h3>Tasa del día</h3><label>Bolívares por 1 dólar<input name="valor" inputmode="decimal" value="' + esc(M.f.valor) + '" placeholder="Ej. 45,50"></label>' +
     '<div class="hint">Se usa para pasar bolívares a dólares en los totales. Cada movimiento en Bs guarda su propia tasa.</div>' +
+    '<div class="card" id="bcvBox" style="margin:6px 0 10px"><div class="hint" style="margin:0">Buscando la tasa del BCV…</div></div>' +
     '<div class="actions"><button class="btn sec" id="bCancel">Cancelar</button><button class="btn" id="bSave">Guardar</button></div>');
+  bcvFetch().then(b => {
+    const box = $('#bcvBox'); if(!box) return;
+    if(!b){ box.innerHTML = '<div class="hint" style="margin:0">No se pudo consultar el BCV. Revisa tu internet.</div>'; return; }
+    box.innerHTML = '<div class="kv"><span>Dólar BCV' + (b.fecha ? ' (' + esc(b.fecha) + ')' : '') + '</span><b>Bs ' + nf.format(b.usd) + '</b></div>' +
+      (b.eur > 0 ? '<div class="kv"><span>Euro BCV</span><b>Bs ' + nf.format(b.eur) + '</b></div>' : '') +
+      '<button class="btn sec" style="width:100%;margin-top:8px" id="bUsaBcv">Usar el dólar BCV como tasa</button>';
+    const bt = $('#bUsaBcv'); if(bt) bt.onclick = () => { const i = document.querySelector('input[name="valor"]'); if(i){ i.value = String(b.usd).replace('.',','); i.dispatchEvent(new Event('input',{bubbles:true})); } M.f.valor = String(b.usd).replace('.',','); toast('Toca Guardar para aplicarla'); };
+  });
   $('#bCancel').onclick = () => closeSheet(1);
   $('#bSave').onclick = async () => {
     if(!S.canWrite) return toast('No tienes permiso para guardar');
@@ -1051,6 +1086,8 @@ async function init(){
   S.db.collection('clientes').onSnapshot(snap => {
     S.cli = snap.docs.map(d => Object.assign({id:d.id}, d.data())); S.loaded.cli = true; fill();
   }, onErr);
+  try{ S.bcv = JSON.parse(localStorage.getItem('bcv') || 'null'); }catch(x){}
+  bcvFetch();
   S.db.doc('config/tasa').onSnapshot(snap => {
     S.tasa = snap.exists ? (Number((snap.data() || {}).valor) || 0) : 0; S.loaded.tasa = true; fill();
   }, onErr);
