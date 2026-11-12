@@ -182,7 +182,15 @@ html[data-vt="r"]::view-transition-new(main){animation-name:vtInR}
 @keyframes slIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
 @keyframes slInR{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
 .cnav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px}
-.cnav .ct{text-align:center}.cnav .ct b{font-size:19px}.cnav .ct .lbl{text-transform:uppercase;letter-spacing:.8px;font-size:11px}
+.cnav .ct{text-align:center;border:0;background:none;padding:4px 10px;border-radius:12px}.cnav .ct:active{background:var(--rose-soft)}.caret{font-size:13px;color:var(--muted)}
+.mgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mcell{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:14px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:var(--shadow);transition:transform .18s var(--ease)}
+.mcell:active{transform:scale(.95)}
+.mcell b{font-size:16px}.mcell span{font-size:12px;color:var(--green);font-variant-numeric:tabular-nums}
+.mcell.empty span{color:var(--muted)}
+.mcell.on{border-color:var(--rose);background:var(--rose-soft)}
+.mcell[disabled]{opacity:.35;box-shadow:none}
+.yseg{justify-content:center}.cnav .ct b{font-size:19px}.cnav .ct .lbl{text-transform:uppercase;letter-spacing:.8px;font-size:11px}
 .iconbtn[disabled]{opacity:.3}
 .cseg{justify-content:center}
 html{scroll-behavior:smooth}
@@ -520,8 +528,8 @@ function fillRes(){
        '<div class="bar"><span>Compras</span><i style="width:' + (st.compras / mx * 100) + '%;background:var(--olive)"></i></div>' +
        '<div class="bar"><span>Gastos</span><i style="width:' + (st.gastos / mx * 100) + '%;background:var(--amber)"></i></div></div>' +
        '<div class="hint" style="margin:10px 0 12px">Ganancia = ventas − compras − gastos del negocio. Los retiros de los dueños, préstamos y cambios de divisas van aparte.' + (st.retiros > 0 ? ' <b>Retiros del dueño: ' + money(st.retiros,'USD') + '</b>.' : '') + '</div>' +
-       '<button class="btn" style="width:100%" data-act="cierre">Ver estado financiero del mes</button>' +
-       '<button class="btn" style="width:100%;margin-top:8px" data-act="cierreanio">Ver estado del año</button>' +
+       '<button class="btn" style="width:100%" data-act="cierre">Ver estado del mes ▾</button>' +
+       '<button class="btn" style="width:100%;margin-top:8px" data-act="cierreanio">Ver estado del año ▾</button>' +
        '<div class="row2" style="margin-top:8px">' + (S.canWrite ? '<button class="btn sec" data-act="cuadrar">Cuadrar caja</button>' : '<span></span>') + '<button class="btn sec" data-act="exportar">Exportar</button></div>' +
        (S.canWrite ? '<button class="btn" style="width:100%;margin-top:8px;background:transparent;color:var(--muted);border:1px solid var(--line)" data-act="importar">Importar historial (archivo)</button><input type="file" id="impFile" accept=".json,application/json" hidden>' : '') + '</div>';
 
@@ -1075,6 +1083,39 @@ function rangoAnio(y, hasta){
   });
   o.util = o.ventas - o.compras - o.gastos; return o;
 }
+/* ---------- selector de mes / año ---------- */
+function aniosData(){
+  const hoy = ymd(new Date());
+  const ys = new Set(S.movs.map(m => String(m.fecha || '').slice(0,4)).filter(Boolean)); ys.add(hoy.slice(0,4));
+  return Array.from(ys).sort().reverse();
+}
+function openPicker(kind, year, keep){
+  const hoy = ymd(new Date()), ys = aniosData();
+  year = year || (S.mes || hoy).slice(0,4);
+  const mesesN = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  let h = '<h3>' + (kind === 'anio' ? 'Elige el año' : 'Elige el mes') + '</h3>';
+  if(kind === 'anio'){
+    h += '<div class="list">' + ys.map(y => {
+      const c = buildCierre(y);
+      return '<button class="item pick" data-act="pickanio" data-id="' + y + '"><div class="l"><div class="t" style="font-size:18px">' + y + '</div>' +
+        '<div class="s">' + c.nVentas + ' ventas · ganancia ' + money(c.util,'USD') + '</div></div>' +
+        '<div class="r"><div class="a pos">' + money(c.ventas,'USD') + '</div><div class="u">ventas</div></div></button>';
+    }).join('') + '</div>';
+  } else {
+    h += '<div class="seg yseg">' + ys.slice().reverse().map(y => '<button class="chip ' + (y === year ? 'on' : '') + '" data-act="pickyear" data-id="' + y + '">' + y + '</button>').join('') + '</div>';
+    const st = {}; S.movs.forEach(m => { const k = String(m.fecha || '').slice(0,7); if(k.slice(0,4) !== year) return; const o = st[k] || (st[k] = {v:0, n:0}); o.n++; if(m.tipo === 'venta') o.v += usd(m); });
+    h += '<div class="mgrid sl-f">' + mesesN.map((n, i) => {
+      const k = year + '-' + String(i + 1).padStart(2,'0'), fut = k > hoy.slice(0,7), d = st[k];
+      return '<button class="mcell' + (k === S.mes ? ' on' : '') + (d ? '' : ' empty') + '" data-act="pickmes" data-id="' + k + '"' + (fut ? ' disabled' : '') + '>' +
+        '<b>' + n + '</b><span>' + (d ? money(d.v,'USD') : (fut ? '' : 'sin datos')) + '</span></button>';
+    }).join('') + '</div>';
+    h += '<button class="btn sec" style="width:100%;margin-top:12px" data-act="pickanio" data-id="' + year + '">Ver todo el año ' + year + '</button>';
+  }
+  h += '<div class="actions"><button class="btn sec" id="bCancel">Cerrar</button></div>';
+  if(keep && !$('#m1').hidden){ $('#s1').innerHTML = h; } else openSheet(1, h);
+  M.kind = 'view';
+  $('#bCancel').onclick = () => closeSheet(1);
+}
 function openCierre(forzar, dir){
   const mes = forzar || S.mes || ymd(new Date()).slice(0,7);
   const esAnio = mes.length === 4;
@@ -1105,7 +1146,7 @@ function openCierre(forzar, dir){
   const minP = S.movs.reduce((a,m) => { const f = String(m.fecha || ''); return f && f < a ? f : a; }, '9999');
   const canPrev = (esAnio ? prevP : prevP) >= minP.slice(0, esAnio ? 4 : 7), canNext = nextP <= hoyP;
   let h = '<div class="cnav"><button class="iconbtn" data-act="cierrenav" data-dir="r" data-id="' + prevP + '"' + (canPrev ? '' : ' disabled') + ' aria-label="Anterior">‹</button>' +
-    '<div class="ct"><div class="lbl">' + (esAnio ? 'Estado del año' : 'Estado del mes') + '</div><b>' + esc(esAnio ? mes : mlabel(mes)) + '</b></div>' +
+    '<button class="ct" data-act="cpick" data-id="' + mes + '"><div class="lbl">' + (esAnio ? 'Estado del año' : 'Estado del mes') + '</div><b>' + esc(esAnio ? mes : mlabel(mes)) + ' <span class="caret">▾</span></b></button>' +
     '<button class="iconbtn" data-act="cierrenav" data-dir="l" data-id="' + nextP + '"' + (canNext ? '' : ' disabled') + ' aria-label="Siguiente">›</button></div>' +
     '<div class="seg cseg"><button class="chip ' + (esAnio ? '' : 'on') + '" data-act="cierrenav" data-id="' + (esAnio ? (mes === hoyP.slice(0,4) ? ymd(new Date()).slice(0,7) : mes + '-12') : mes) + '">Mes</button><button class="chip ' + (esAnio ? 'on' : '') + '" data-act="cierrenav" data-id="' + mes.slice(0,4) + '">Año</button></div>' +
     '<div class="cbody' + (dir ? ' sl-' + dir : '') + '">';
@@ -1446,8 +1487,12 @@ document.addEventListener('click', e => {
     case 'provver': openProvVer(id); break;
     case 'clivista': S.cliVista = id; S.qc = ''; S.built = ''; buildShell(); fill(); break;
     case 'newcompra': if(!S.canWrite) return toast('Solo lectura'); openMov({tipo:'compra'}); break;
-    case 'cierre': openCierre(); break;
-    case 'cierreanio': openCierre((S.mes || ymd(new Date())).slice(0,4)); break;
+    case 'cierre': openPicker('mes'); break;
+    case 'pickyear': openPicker('mes', id, true); break;
+    case 'pickmes': S.mes = id; fill(); openCierre(id, 'f'); break;
+    case 'pickanio': openCierre(id, 'f'); break;
+    case 'cpick': openPicker(id.length === 4 ? 'anio' : 'mes', id.slice(0,4), true); break;
+    case 'cierreanio': openPicker('anio'); break;
     case 'cuadrar': openCuadrar(); break;
     case 'exportar': openExport(); break;
     case 'exper': if(M.f && M.kind === 'export'){ M.f.tipoPer = id; $('#fbody').innerHTML = expFields(M.f); } break;
