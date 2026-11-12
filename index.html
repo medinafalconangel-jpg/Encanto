@@ -197,8 +197,14 @@ const TIPOS = {
   gasto:   {n:'Gasto',        s:-1},
   ingreso: {n:'Otro ingreso', s: 1},
   cambio:  {n:'Cambio entre cajas'},
-  inicial: {n:'Saldo inicial',s: 1}
+  inicial: {n:'Saldo inicial',s: 1},
+  retiro:  {n:'Retiro del dueño', s:-1},
+  aporte:  {n:'Aporte del dueño', s: 1},
+  ajuste:  {n:'Ajuste de caja', hide:true}
 };
+// gastos antiguos que en realidad son retiros de los dueños
+const RET = ['Vivienda (alquiler)','Educación','Salud','Personal / hogar'];
+const esRetiro = m => m.tipo === 'retiro' || (m.tipo === 'gasto' && RET.indexOf(m.cat) >= 0);
 const CATS = ['Alquiler','Servicios','Sueldos','Transporte','Empaque y materiales','Otros','Vivienda (alquiler)','Educación','Salud','Personal / hogar','Préstamos','Cambio de divisas'];
 // gastos que salen de la caja pero no son del negocio: no restan a la ganancia
 const NOOP = ['Vivienda (alquiler)','Educación','Salud','Personal / hogar','Préstamos','Cambio de divisas'];
@@ -225,12 +231,14 @@ function balances(){
   return b;
 }
 function monthStats(mes){
-  const o = {ventas:0,compras:0,gastos:0,personal:0};
+  const o = {ventas:0,compras:0,gastos:0,personal:0,retiros:0,aportes:0};
   S.movs.forEach(m => {
     if(mes && String(m.fecha||'').slice(0,7) !== mes) return;
     if(m.tipo === 'venta') o.ventas += usd(m);
     else if(m.tipo === 'compra') o.compras += usd(m);
     else if(m.tipo === 'gasto'){ if(NOOP.indexOf(m.cat) >= 0) o.personal += usd(m); else o.gastos += usd(m); }
+    if(esRetiro(m)) o.retiros += usd(m);
+    if(m.tipo === 'aporte') o.aportes += usd(m);
   });
   return o;
 }
@@ -369,9 +377,10 @@ function fillRes(){
        '<div class="bar"><span>Ventas</span><i style="width:' + (st.ventas / mx * 100) + '%;background:var(--green)"></i></div>' +
        '<div class="bar"><span>Compras</span><i style="width:' + (st.compras / mx * 100) + '%;background:var(--olive)"></i></div>' +
        '<div class="bar"><span>Gastos</span><i style="width:' + (st.gastos / mx * 100) + '%;background:var(--amber)"></i></div></div>' +
-       '<div class="hint" style="margin:10px 0 12px">Ganancia = ventas − compras − gastos del negocio (préstamos, vivienda, salud, educación, gastos personales y cambios de divisas van aparte). Los bolívares se pasan a dólares con la tasa de cada registro.</div>' +
+       '<div class="hint" style="margin:10px 0 12px">Ganancia = ventas − compras − gastos del negocio. Los retiros de los dueños, préstamos y cambios de divisas van aparte.' + (st.retiros > 0 ? ' <b>Retiros del dueño: ' + money(st.retiros,'USD') + '</b>.' : '') + '</div>' +
        '<button class="btn" style="width:100%" data-act="cierre">Ver estado financiero del mes</button>' +
        '<button class="btn" style="width:100%;margin-top:8px" data-act="cierreanio">Ver estado del año</button>' +
+       '<div class="row2" style="margin-top:8px">' + (S.canWrite ? '<button class="btn sec" data-act="cuadrar">Cuadrar caja</button>' : '<span></span>') + '<button class="btn sec" data-act="exportar">Exportar a Excel</button></div>' +
        (S.canWrite ? '<button class="btn" style="width:100%;margin-top:8px;background:transparent;color:var(--muted);border:1px solid var(--line)" data-act="importar">Importar historial (archivo)</button><input type="file" id="impFile" accept=".json,application/json" hidden>' : '') + '</div>';
 
   const last = sorted(S.movs).slice(0,6);
@@ -470,6 +479,7 @@ $('#s1').addEventListener('input', e => {
   M.f[e.target.name] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   if(e.target.name === 'monto') M.f.montoEdit = true;
   if(M.kind === 'cambio') { const hh = $('#cambioHint'); if(hh) hh.innerHTML = cambioHint(M.f); }
+  if(M.kind === 'cuadrar') { const hh = $('#cuadHint'); if(hh) hh.innerHTML = cuadrarHint(M.f); }
 });
 $('#s1').addEventListener('change', e => {
   if(!M.f || !e.target.name) return;
@@ -508,7 +518,7 @@ function movFields(f){
   let moneda;
   if(conCaja){
     moneda = CAJAS[f.caja].m;
-    const entra = TIPOS[f.tipo].s > 0;
+    const entra = (TIPOS[f.tipo].s || M.oldSigno || 1) > 0;
     h += '<label>' + (entra ? 'Entra a' : 'Sale de') + '<select name="caja">' + cajaOpts(f.caja) + '</select></label>';
   } else {
     moneda = f.moneda;
@@ -533,7 +543,9 @@ function movFields(f){
   if(f.tipo === 'gasto'){
     h += '<label>Categoría<select name="cat">' + CATS.map(c => '<option' + (f.cat === c ? ' selected' : '') + '>' + c + '</option>').join('') + '</select></label>';
   }
-  const ph = f.tipo === 'venta' ? 'Ej. ramo de rosas, 2 docenas' : f.tipo === 'compra' ? 'Ej. 10 docenas de rosas' : f.tipo === 'inicial' ? 'Ej. saldo al empezar a usar la app' : 'Detalle';
+  const ph = f.tipo === 'venta' ? 'Ej. ramo de rosas, 2 docenas' : f.tipo === 'compra' ? 'Ej. 10 docenas de rosas' : f.tipo === 'inicial' ? 'Ej. saldo al empezar a usar la app' : f.tipo === 'retiro' ? 'Ej. alquiler de la casa, universidad, mercado' : f.tipo === 'aporte' ? 'Ej. dinero propio que metí al negocio' : 'Detalle';
+  if(f.tipo === 'retiro') h += '<div class="hint">Dinero que sacan ustedes para cosas personales. Sale de la caja pero no cuenta como gasto del negocio.</div>';
+  if(f.tipo === 'aporte') h += '<div class="hint">Dinero propio que entra al negocio. No cuenta como venta.</div>';
   h += '<label>Detalle<input name="desc" value="' + esc(f.desc) + '" placeholder="' + esc(ph) + '"></label>';
   return h;
 }
@@ -553,9 +565,9 @@ function openMov(opts){
     clienteId: opts.clienteId || '', clienteNuevo:'', tercero:'', cat:'Otros', desc:'',
     o_caja:'efe_bs', o_monto:'', d_caja:'zelle', d_monto:''
   };
-  M.f = f; M.fields = movFields; M.kind = 'mov';
+  M.f = f; M.fields = movFields; M.kind = 'mov'; M.oldSigno = old ? old.signo : 1;
   M.rerender = ['pagado','caja','moneda','clienteId','o_caja','d_caja'];
-  const tipoChips = () => Object.keys(TIPOS).map(k => '<button type="button" class="chip ' + (f.tipo === k ? 'on' : '') + '" data-act="settipo" data-id="' + k + '">' + TIPOS[k].n + '</button>').join('');
+  const tipoChips = () => Object.keys(TIPOS).filter(k => !TIPOS[k].hide).map(k => '<button type="button" class="chip ' + (f.tipo === k ? 'on' : '') + '" data-act="settipo" data-id="' + k + '">' + TIPOS[k].n + '</button>').join('');
   M.tipoChips = tipoChips;
   openSheet(1,
     '<h3>' + (old ? 'Editar movimiento' : 'Nuevo movimiento') + '</h3>' +
@@ -609,7 +621,7 @@ async function saveMov(old){
         } else { clienteId = f.clienteId; const c = cliById(clienteId); clienteNombre = c ? c.nombre : ''; }
       }
       const doc = {
-        fecha:f.fecha, tipo:f.tipo, signo:TIPOS[f.tipo].s, caja, moneda, monto:r2(monto), pagado, tasa,
+        fecha:f.fecha, tipo:f.tipo, signo:(TIPOS[f.tipo].s || (old ? old.signo : 1)), caja, moneda, monto:r2(monto), pagado, tasa,
         clienteId, clienteNombre, tercero: f.tipo === 'compra' ? f.tercero.trim() : '', cat: f.tipo === 'gasto' ? f.cat : '',
         desc:f.desc.trim(), por: old ? (old.por || '') : (S.uid || ''), creado: old ? (old.creado || Date.now()) : Date.now(), grupo:''
       };
@@ -799,7 +811,12 @@ function buildCierre(mes){
   const compras = S.movs.filter(m => m.tipo === 'compra' && inMes(m)).reduce((a,m) => a + usd(m), 0);
   const gastosAll = S.movs.filter(m => m.tipo === 'gasto' && inMes(m));
   const gastosL = gastosAll.filter(m => NOOP.indexOf(m.cat) < 0);
-  const personalL = gastosAll.filter(m => NOOP.indexOf(m.cat) >= 0);
+  const personalL = gastosAll.filter(m => NOOP.indexOf(m.cat) >= 0 && RET.indexOf(m.cat) < 0);
+  const retL = S.movs.filter(m => esRetiro(m) && inMes(m));
+  const retiros = retL.reduce((a,m) => a + usd(m), 0);
+  const porRet = {}; retL.forEach(m => { const k = m.tipo === 'retiro' ? 'Retiros' : m.cat; porRet[k] = (porRet[k] || 0) + usd(m); });
+  const aportes = S.movs.filter(m => m.tipo === 'aporte' && inMes(m)).reduce((a,m) => a + usd(m), 0);
+  const ajustes = S.movs.filter(m => m.tipo === 'ajuste' && inMes(m)).reduce((a,m) => a + m.signo * usd(m), 0);
   const personal = personalL.reduce((a,m) => a + usd(m), 0);
   const porCatP = {}; personalL.forEach(m => { porCatP[m.cat] = (porCatP[m.cat] || 0) + usd(m); });
   const porCat = {}; gastosL.forEach(m => { const k = m.cat || 'Otros'; porCat[k] = (porCat[k] || 0) + usd(m); });
@@ -820,7 +837,7 @@ function buildCierre(mes){
   const top = Object.keys(cli).map(n => ({n, v:cli[n]})).sort((a,b) => b.v - a.v).slice(0,5);
   let cobrar = 0, pagar = 0;
   S.movs.filter(m => m.pagado === false).forEach(m => { if(m.signo > 0) cobrar += usd(m); else pagar += usd(m); });
-  return {mes, ventas, compras, gastos, porCat, personal, porCatP, util, margen, cajas, top, cobrar, pagar, nVentas: ventasL.length};
+  return {mes, ventas, compras, gastos, porCat, personal, porCatP, retiros, porRet, aportes, ajustes, util, margen, cajas, top, cobrar, pagar, nVentas: ventasL.length};
 }
 function cierreText(c){
   const L = [];
@@ -832,6 +849,8 @@ function cierreText(c){
   Object.keys(c.porCat).forEach(k => L.push('Gasto ' + k + ': − ' + money(c.porCat[k],'USD')));
   L.push('Total gastos: − ' + money(c.gastos,'USD'));
   L.push('GANANCIA: ' + money(c.util,'USD') + (c.ventas > 0 ? ' (' + nf.format(c.margen) + '% de las ventas)' : ''));
+  if(c.retiros > 0 || c.aportes > 0){ L.push(''); L.push('DUEÑOS'); if(c.retiros > 0) L.push('Retiros del dueño: − ' + money(c.retiros,'USD') + ' (' + Object.keys(c.porRet).map(k => k + ' ' + money(c.porRet[k],'USD')).join(', ') + ')'); if(c.aportes > 0) L.push('Aportes del dueño: + ' + money(c.aportes,'USD')); L.push('Queda en el negocio: ' + money(c.util - c.retiros + c.aportes,'USD')); }
+  if(Math.abs(c.ajustes) > 0.004) L.push('Ajustes de caja: ' + money(c.ajustes,'USD'));
   if(c.personal > 0){ L.push('Aparte (no restan a la ganancia): ' + Object.keys(c.porCatP).map(k => k + ' ' + money(c.porCatP[k],'USD')).join(', ')); }
   L.push('');
   L.push('MOVIMIENTO DE CAJAS');
@@ -843,7 +862,7 @@ function cierreText(c){
   return L.join('\n');
 }
 function rangoAnio(y, hasta){
-  const o = {ventas:0,compras:0,gastos:0,personal:0};
+  const o = {ventas:0,compras:0,gastos:0,personal:0,retiros:0,aportes:0};
   S.movs.forEach(m => {
     const f = String(m.fecha || ''); if(f.slice(0,4) !== String(y) || f.slice(5,7) > hasta) return;
     if(m.tipo === 'venta') o.ventas += usd(m);
@@ -883,7 +902,9 @@ function openCierre(forzar){
        row('Compras', '− ' + money(c.compras,'USD')) +
        Object.keys(c.porCat).map(k => row('Gasto: ' + esc(k), '− ' + money(c.porCat[k],'USD'))).join('') +
        row('Ganancia' + (c.ventas > 0 ? ' (' + nf.format(c.margen) + '%)' : ''), money(c.util,'USD'), c.util < 0 ? 'neg' : 'pos') + '</div>';
-  if(c.personal > 0) h += '<div class="hint">Aparte, sin restar a la ganancia: ' + Object.keys(c.porCatP).map(k => esc(k) + ' ' + money(c.porCatP[k],'USD')).join(' · ') + '</div>';
+  if(c.retiros > 0 || c.aportes > 0) h += '<h2>Dueños</h2><div class="card">' + Object.keys(c.porRet).map(k => row('Retiro: ' + esc(k), '− ' + money(c.porRet[k],'USD'))).join('') + (c.aportes > 0 ? row('Aportes del dueño', '+ ' + money(c.aportes,'USD'), 'pos') : '') + row('Queda en el negocio', money(c.util - c.retiros + c.aportes,'USD'), (c.util - c.retiros + c.aportes) < 0 ? 'neg' : 'pos') + '</div>';
+  if(Math.abs(c.ajustes) > 0.004) h += '<div class="hint" style="margin-top:8px">Ajustes al cuadrar caja en el periodo: ' + money(c.ajustes,'USD') + '</div>';
+  if(c.personal > 0) h += '<div class="hint" style="margin-top:8px">Aparte, sin restar a la ganancia: ' + Object.keys(c.porCatP).map(k => esc(k) + ' ' + money(c.porCatP[k],'USD')).join(' · ') + '</div>';
   h += '<h2>Movimiento de cajas</h2><div class="list">' + c.cajas.map(x =>
        '<div class="card"><b>' + x.n + '</b>' +
        '<div class="kv"><span>' + (esAnio ? 'Al empezar el año' : 'Al empezar el mes') + '</span><span>' + money(x.ini,x.m) + '</span></div>' +
@@ -916,6 +937,68 @@ async function resolveNames(){
     need.forEach(id => { const p = ps && ps[id]; S.names[id] = (p && p.name) || 'otra persona'; });
     document.querySelectorAll('[data-uid]').forEach(el => { el.textContent = nameOf(el.dataset.uid); });
   }catch(e){}
+}
+
+/* ---------- cuadrar caja ---------- */
+function cuadrarFields(f){
+  const c = CAJAS[f.caja], app = balances()[f.caja] || 0;
+  const sym = c.m === 'USD' ? '$' : 'Bs';
+  return '<label>Caja<select name="caja">' + cajaOpts(f.caja) + '</select></label>' +
+    '<div class="card" style="margin-bottom:10px"><div class="kv"><span>Saldo según la app</span><b>' + money(app,c.m) + '</b></div></div>' +
+    '<label>Saldo real que tienes (' + sym + ')<input name="real" inputmode="decimal" placeholder="0,00" value="' + esc(f.real) + '"></label>' +
+    '<div id="cuadHint" class="hint">' + cuadrarHint(f) + '</div>' +
+    '<label>Fecha<input type="date" name="fecha" value="' + esc(f.fecha) + '"></label>' +
+    '<label>Nota (opcional)<input name="desc" value="' + esc(f.desc) + '" placeholder="Ej. comisión del banco, vuelto"></label>';
+}
+function cuadrarHint(f){
+  if(String(f.real).trim() === '') return 'Mira el saldo en el banco, en Zelle o cuenta el efectivo, y escríbelo aquí.';
+  const c = CAJAS[f.caja], d = r2(num(f.real) - (balances()[f.caja] || 0));
+  if(Math.abs(d) < 0.005) return '<b class="pos">Cuadra perfecto.</b> No hace falta ajuste.';
+  return d > 0 ? '<b class="pos">Sobran ' + money(d,c.m) + '</b>: hay más dinero del que dice la app. Se guardará un ajuste de entrada.'
+               : '<b class="neg">Faltan ' + money(-d,c.m) + '</b>: hay menos dinero del que dice la app. Se guardará un ajuste de salida.';
+}
+function openCuadrar(){
+  M.f = {caja: (S.fCaja && CAJAS[S.fCaja]) ? S.fCaja : 'zelle', real:'', fecha: ymd(new Date()), desc:''};
+  M.fields = cuadrarFields; M.kind = 'cuadrar'; M.rerender = ['caja'];
+  openSheet(1, '<h3>Cuadrar caja</h3><div id="fbody">' + cuadrarFields(M.f) + '</div>' +
+    '<div class="actions"><button class="btn sec" id="bCancel">Cancelar</button><button class="btn" id="bSave">Guardar ajuste</button></div>');
+  $('#bCancel').onclick = () => closeSheet(1);
+  $('#bSave').onclick = async () => {
+    const f = M.f, c = CAJAS[f.caja];
+    if(String(f.real).trim() === '') return toast('Escribe el saldo real');
+    const app = balances()[f.caja] || 0, d = r2(num(f.real) - app);
+    if(Math.abs(d) < 0.005){ closeSheet(1); return toast('Cuadra perfecto, sin ajuste'); }
+    let tasa = null; if(c.m === 'VES'){ tasa = S.tasa || 0; if(!(tasa > 0)) return toast('Define primero la tasa Bs/$'); }
+    $('#bSave').disabled = true;
+    try{
+      await S.db.collection('movs').doc().set({fecha:f.fecha, tipo:'ajuste', signo: d > 0 ? 1 : -1, caja:f.caja, moneda:c.m, monto:Math.abs(d), pagado:true, tasa,
+        clienteId:'', clienteNombre:'', tercero:'', cat:'', desc:('Cuadre de caja: la app decía ' + money(app,c.m) + ' y había ' + money(num(f.real),c.m) + (f.desc.trim() ? '. ' + f.desc.trim() : '')), por:S.uid || '', creado:Date.now(), grupo:''});
+      closeSheet(1); toast('Caja cuadrada');
+    }catch(e){ $('#bSave').disabled = false; toast('No se pudo guardar'); }
+  };
+}
+
+/* ---------- exportar a Excel (CSV) ---------- */
+async function exportCsv(){
+  if(!S.movs.length) return toast('No hay movimientos');
+  const n = v => (v == null || v === '') ? '' : String(Math.round(v * 100) / 100).replace('.',',');
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"';
+  const rows = [['Fecha','Tipo','Caja','Moneda','Entrada','Salida','Tasa Bs/$','Equivalente en $','Cliente','Proveedor','Categoría','Detalle','Estado']];
+  sorted(S.movs).reverse().forEach(m => {
+    const t = (TIPOS[m.tipo] || {n:m.tipo}).n;
+    rows.push([m.fecha, t, m.caja ? CAJAS[m.caja].n : '', m.moneda || '', m.signo > 0 ? n(m.monto) : '', m.signo > 0 ? '' : n(m.monto), n(m.tasa), n((m.signo || 1) * usd(m)),
+      cliName(m) || '', m.tercero || '', m.cat || '', m.desc || '', m.pagado === false ? 'Pendiente' : 'Pagado']);
+  });
+  const csv = '﻿' + rows.map(r => r.map(q).join(';')).join('\r\n');
+  const name = 'encanto-movimientos-' + ymd(new Date()) + '.csv';
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  try{
+    const file = new File([blob], name, {type:'text/csv'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:name}); return; }
+  }catch(e){ if(e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  toast('Archivo listo: ' + (rows.length - 1) + ' movimientos');
 }
 
 /* ---------- importar historial ---------- */
@@ -954,6 +1037,8 @@ document.addEventListener('click', e => {
     case 'cliver': openCliVer(id); break;
     case 'cierre': openCierre(); break;
     case 'cierreanio': openCierre((S.mes || ymd(new Date())).slice(0,4)); break;
+    case 'cuadrar': openCuadrar(); break;
+    case 'exportar': exportCsv(); break;
     case 'importar': { const fi = $('#impFile'); if(fi){ fi.value=''; fi.click(); } break; }
     case 'salir': askConfirm('¿Cerrar sesión en este teléfono?','Salir').then(ok => { if(ok && S.user && S.user.signOut) S.user.signOut().then(() => location.reload()); }); break;
     case 'gocaja': S.fCaja = id; S.mes = ''; setTab('mov'); break;
