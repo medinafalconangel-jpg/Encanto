@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Encanto · Cuentas</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f6f5f0">
@@ -32,17 +32,25 @@
   .btn,.chip.on,.fab{color:#161815 !important}
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{overflow-x:hidden;-webkit-text-size-adjust:100%}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.35}
 button{font:inherit;color:inherit;cursor:pointer}
-#app{max-width:780px;margin:0 auto;padding:0 14px 110px}
-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 2px 10px}
+#app{max-width:780px;margin:0 auto;padding:0 14px 110px;width:100%;overflow-x:hidden}
+#main,.list,.grid,.stats,.card{min-width:0}
+.list{grid-template-columns:minmax(0,1fr)}
+.grid,.stats,.row2{grid-template-columns:repeat(2,minmax(0,1fr))}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(12px + env(safe-area-inset-top)) 2px 8px}
+header > .row{flex:none;gap:6px}
 header h1{margin:0;font-size:21px;letter-spacing:.2px;font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;font-weight:600}
-.brand{display:flex;align-items:center;gap:11px;min-width:0}.brand svg{width:44px;height:44px;flex:none}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}.brand svg{width:40px;height:40px;flex:none}
+@media (max-width:430px){header h1{font-size:19px}.pill{padding:6px 10px;font-size:13px}.big{font-size:28px}.caja .v{font-size:18px}#app{padding:0 12px 110px}}
 header .sub{letter-spacing:.2px}
 header .sub{color:var(--muted);font-size:13px}
 .pill{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;font-size:14px;box-shadow:var(--shadow)}
 .pill b{font-variant-numeric:tabular-nums}
-.pill{white-space:nowrap}header .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{white-space:nowrap}
+.bcvbar{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .r{flex:none;max-width:48%}header .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .banner{margin:6px 0 10px;padding:10px 12px;border-radius:12px;font-size:14px;background:var(--amber-soft);color:var(--amber)}
 .banner.err{background:var(--red-soft);color:var(--red)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
@@ -68,7 +76,7 @@ h2{font-size:12px;margin:22px 2px 8px;color:var(--muted);font-weight:700;text-tr
 .bar{display:grid;grid-template-columns:78px 1fr;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
 .bar i{display:block;height:8px;border-radius:6px;min-width:3px}
 .list{display:grid;gap:8px}
-.item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;background:var(--card);border:1px solid var(--line);border-radius:14px;width:100%;text-align:left}
+.item{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;background:var(--card);border:1px solid var(--line);border-radius:14px;width:100%;text-align:left}
 .item .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .item .s{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .item .l{min-width:0;flex:1}
@@ -324,7 +332,7 @@ function itemHtml(m, opts){
   const who = m.tipo === 'venta' ? cliName(m) : (m.tercero || '');
   const title = m.desc || (m.tipo === 'cambio' ? (m.signo > 0 ? 'Cambio: entrada' : 'Cambio: salida') : t.n);
   const cajaTxt = m.caja ? CAJAS[m.caja].n : (pend ? (m.signo > 0 ? 'Por cobrar' : 'Por pagar') : '');
-  const sub = [t.n, m.prod || '', cajaTxt, who, (m.tipo === 'venta' && m.costo > 0 && m.monto > 0) ? 'margen ' + nf.format((m.monto - m.costo) / m.monto * 100) + '%' : ''].filter(Boolean).join(' · ');
+  const sub = [t.n, cajaTxt, who].filter(Boolean).join(' · ');
   const eq = (m.moneda === 'VES' && usd(m)) ? '<div class="u">≈ ' + money(usd(m),'USD') + '</div>' : '';
   const por = m.por ? '<span class="who" data-uid="' + esc(m.por) + '"></span>' : '';
   return '<button class="item" data-act="' + (opts.act || 'edit') + '" data-id="' + esc(m.id) + '">' +
@@ -382,7 +390,7 @@ function fillRes(){
        '<div class="hint" style="margin:10px 0 12px">Ganancia = ventas − compras − gastos del negocio. Los retiros de los dueños, préstamos y cambios de divisas van aparte.' + (st.retiros > 0 ? ' <b>Retiros del dueño: ' + money(st.retiros,'USD') + '</b>.' : '') + '</div>' +
        '<button class="btn" style="width:100%" data-act="cierre">Ver estado financiero del mes</button>' +
        '<button class="btn" style="width:100%;margin-top:8px" data-act="cierreanio">Ver estado del año</button>' +
-       '<div class="row2" style="margin-top:8px">' + (S.canWrite ? '<button class="btn sec" data-act="cuadrar">Cuadrar caja</button>' : '<span></span>') + '<button class="btn sec" data-act="exportar">Exportar a Excel</button></div>' +
+       '<div class="row2" style="margin-top:8px">' + (S.canWrite ? '<button class="btn sec" data-act="cuadrar">Cuadrar caja</button>' : '<span></span>') + '<button class="btn sec" data-act="exportar">Exportar</button></div>' +
        (S.canWrite ? '<button class="btn" style="width:100%;margin-top:8px;background:transparent;color:var(--muted);border:1px solid var(--line)" data-act="importar">Importar historial (archivo)</button><input type="file" id="impFile" accept=".json,application/json" hidden>' : '') + '</div>';
 
   const last = sorted(S.movs).slice(0,6);
@@ -537,7 +545,6 @@ $('#s1').addEventListener('input', e => {
   M.f[e.target.name] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   if(e.target.name === 'monto') M.f.montoEdit = true;
   if(M.kind === 'cambio') { const hh = $('#cambioHint'); if(hh) hh.innerHTML = cambioHint(M.f); }
-  if(M.kind === 'mov') { const hh = $('#margenHint'); if(hh) hh.innerHTML = margenHint(M.f); }
   if(M.kind === 'cuadrar') { const hh = $('#cuadHint'); if(hh) hh.innerHTML = cuadrarHint(M.f); }
 });
 $('#s1').addEventListener('change', e => {
@@ -558,12 +565,6 @@ function cambioHint(f){
   if(a.m === b.m) return '';
   const ves = a.m === 'VES' ? o : d, dol = a.m === 'USD' ? o : d;
   return 'Tasa implícita: Bs ' + nf.format(ves / dol) + ' por $';
-}
-function margenHint(f){
-  const v = num(f.monto), c = num(f.costo);
-  if(!(v > 0) || !(c > 0)) return 'El costo es lo que gastaste en flores y materiales para esta venta. Sirve para ver el margen; no cambia la ganancia del mes.';
-  const g = v - c;
-  return 'Margen de esta venta: <b class="' + (g < 0 ? 'neg' : 'pos') + '">' + nf.format(g) + ' (' + nf.format(g / v * 100) + '%)</b>';
 }
 function movFields(f){
   let h = '';
@@ -600,13 +601,6 @@ function movFields(f){
          '<option value="__nuevo"' + (f.clienteId === '__nuevo' ? ' selected' : '') + '>+ Cliente nuevo…</option></select></label>';
     if(f.clienteId === '__nuevo') h += '<label>Nombre del cliente nuevo<input name="clienteNuevo" value="' + esc(f.clienteNuevo) + '" autocomplete="off"></label>';
   }
-  if(f.tipo === 'venta'){
-    const prods = Array.from(new Set(S.movs.filter(m => m.tipo === 'venta' && m.prod).map(m => m.prod))).sort();
-    h += '<div class="row2"><label>Producto (opcional)<input name="prod" list="prodList" value="' + esc(f.prod) + '" autocomplete="off" placeholder="Ej. Ramo, Arreglo"></label>' +
-         '<label>Costo (' + (moneda === 'USD' ? '$' : 'Bs') + ', opcional)<input name="costo" inputmode="decimal" placeholder="0,00" value="' + esc(f.costo) + '"></label></div>' +
-         '<datalist id="prodList">' + prods.map(p => '<option value="' + esc(p) + '">').join('') + '</datalist>' +
-         '<div class="hint" id="margenHint">' + margenHint(f) + '</div>';
-  }
   if(f.tipo === 'compra'){
     const provs = Array.from(new Set(S.movs.filter(m => m.tipo === 'compra' && m.tercero).map(m => m.tercero)));
     h += '<label>Proveedor<input name="tercero" list="provList" value="' + esc(f.tercero) + '" autocomplete="off"></label>' +
@@ -630,11 +624,11 @@ function openMov(opts){
     tipo: old.tipo, fecha: old.fecha, pagado: old.pagado !== false,
     caja: old.caja || 'zelle', moneda: old.moneda || 'USD', monto: String(old.monto).replace('.',','),
     tasa: old.tasa ? String(old.tasa).replace('.',',') : tasaTxt,
-    prod: old.prod || '', costo: old.costo ? String(old.costo).replace('.',',') : '', clienteId: old.clienteId || '', clienteNuevo: '', tercero: old.tercero || '', cat: old.cat || 'Otros', desc: old.desc || '',
+    clienteId: old.clienteId || '', clienteNuevo: '', tercero: old.tercero || '', cat: old.cat || 'Otros', desc: old.desc || '',
     o_caja:'efe_bs', o_monto:'', d_caja:'zelle', d_monto:''
   } : {
     tipo: opts.tipo || 'venta', fecha: ymd(new Date()), pagado: true, caja:'zelle', moneda:'USD', monto:'', tasa: tasaTxt,
-    prod:'', costo:'', clienteId: opts.clienteId || '', clienteNuevo:'', tercero: opts.tercero || '', cat:'Otros', desc:'',
+    clienteId: opts.clienteId || '', clienteNuevo:'', tercero: opts.tercero || '', cat:'Otros', desc:'',
     o_caja:'efe_bs', o_monto:'', d_caja:'zelle', d_monto:''
   };
   M.f = f; M.fields = movFields; M.kind = 'mov'; M.oldSigno = old ? old.signo : 1;
@@ -695,7 +689,6 @@ async function saveMov(old){
       const doc = {
         fecha:f.fecha, tipo:f.tipo, signo:(TIPOS[f.tipo].s || (old ? old.signo : 1)), caja, moneda, monto:r2(monto), pagado, tasa,
         clienteId, clienteNombre, tercero: f.tipo === 'compra' ? f.tercero.trim() : '', cat: f.tipo === 'gasto' ? f.cat : '',
-        prod: f.tipo === 'venta' ? (f.prod || '').trim() : '', costo: (f.tipo === 'venta' && num(f.costo) > 0) ? r2(num(f.costo)) : 0,
         desc:f.desc.trim(), por: old ? (old.por || '') : (S.uid || ''), creado: old ? (old.creado || Date.now()) : Date.now(), grupo:''
       };
       if(old) await S.db.collection('movs').doc(old.id).set(doc);
@@ -906,16 +899,11 @@ function buildCierre(mes){
     });
     return {k, n:CAJAS[k].n, m:CAJAS[k].m, ini, ent, sal, fin: ini + ent - sal};
   });
-  const costoUsd = m => { if(!(m.costo > 0)) return 0; if(m.moneda === 'USD') return m.costo; const t = m.tasa || S.tasa; return t ? m.costo / t : 0; };
-  const conCosto = ventasL.filter(m => m.costo > 0);
-  const mg = {v: conCosto.reduce((a,m) => a + usd(m), 0), c: conCosto.reduce((a,m) => a + costoUsd(m), 0), n: conCosto.length};
-  const pr = {}; ventasL.forEach(m => { const k = m.prod || ''; if(!k) return; const o = pr[k] || (pr[k] = {n:k, q:0, v:0, vc:0, c:0}); o.q++; o.v += usd(m); if(m.costo > 0){ o.vc += usd(m); o.c += costoUsd(m); } });
-  const prods = Object.keys(pr).map(k => pr[k]).sort((a,b) => b.v - a.v);
   const cli = {}; ventasL.forEach(m => { const n = cliName(m) || 'Sin cliente'; cli[n] = (cli[n] || 0) + usd(m); });
   const top = Object.keys(cli).map(n => ({n, v:cli[n]})).sort((a,b) => b.v - a.v).slice(0,5);
   let cobrar = 0, pagar = 0;
   S.movs.filter(m => m.pagado === false).forEach(m => { if(m.signo > 0) cobrar += usd(m); else pagar += usd(m); });
-  return {mes, ventas, compras, gastos, porCat, personal, porCatP, retiros, porRet, aportes, ajustes, mg, prods, util, margen, cajas, top, cobrar, pagar, nVentas: ventasL.length};
+  return {mes, ventas, compras, gastos, porCat, personal, porCatP, retiros, porRet, aportes, ajustes, util, margen, cajas, top, cobrar, pagar, nVentas: ventasL.length};
 }
 function cierreText(c){
   const L = [];
@@ -935,8 +923,6 @@ function cierreText(c){
   c.cajas.forEach(x => L.push(x.n + ': inicio ' + money(x.ini,x.m) + ' | entró ' + money(x.ent,x.m) + ' | salió ' + money(x.sal,x.m) + ' | final ' + money(x.fin,x.m)));
   L.push('');
   L.push('Por cobrar hoy: ' + money(c.cobrar,'USD') + ' · Por pagar hoy: ' + money(c.pagar,'USD'));
-  if(c.mg.n){ L.push(''); L.push('MARGEN (ventas con costo anotado: ' + c.mg.n + ')'); L.push('Vendido ' + money(c.mg.v,'USD') + ' · costo ' + money(c.mg.c,'USD') + ' · margen ' + money(c.mg.v - c.mg.c,'USD') + ' (' + nf.format(c.mg.v ? (c.mg.v - c.mg.c) / c.mg.v * 100 : 0) + '%)'); }
-  if(c.prods.length){ L.push(''); L.push('POR PRODUCTO'); c.prods.forEach(x => L.push(x.n + ' (' + x.q + '): ' + money(x.v,'USD') + (x.c > 0 ? ' · margen ' + nf.format((x.vc - x.c) / x.vc * 100) + '%' : ''))); }
   if(c.top.length){ L.push(''); L.push('MEJORES CLIENTES'); c.top.forEach(t => L.push(t.n + ': ' + money(t.v,'USD'))); }
   if(!S.tasa) L.push('\nNota: sin tasa definida, los movimientos en Bs sin tasa propia no se convierten a dólares.');
   return L.join('\n');
@@ -993,8 +979,6 @@ function openCierre(forzar){
        '<div class="kv"><span>Saldo final</span><b>' + money(x.fin,x.m) + '</b></div></div>').join('') + '</div>';
   h += extra;
   h += '<h2>Pendientes hoy</h2><div class="card">' + row('Por cobrar', money(c.cobrar,'USD'), 'pend') + row('Por pagar', money(c.pagar,'USD'), 'pend') + '</div>';
-  if(c.mg.n) h += '<h2>Margen de las ventas</h2><div class="card">' + row('Ventas con costo anotado (' + c.mg.n + ')', money(c.mg.v,'USD')) + row('Costo de flores y materiales', '− ' + money(c.mg.c,'USD')) + row('Margen (' + nf.format(c.mg.v ? (c.mg.v - c.mg.c) / c.mg.v * 100 : 0) + '%)', money(c.mg.v - c.mg.c,'USD'), (c.mg.v - c.mg.c) < 0 ? 'neg' : 'pos') + '</div>';
-  if(c.prods.length) h += '<h2>Por producto</h2><div class="card">' + c.prods.map(x => row(esc(x.n) + ' (' + x.q + ')', money(x.v,'USD') + (x.c > 0 ? ' · <span class="' + ((x.vc - x.c) < 0 ? 'neg' : 'pos') + '">' + nf.format((x.vc - x.c) / x.vc * 100) + '%</span>' : ''))).join('') + '<div class="hint" style="margin:6px 0 0">Vendido · margen (solo si anotaste el costo)</div></div>';
   if(c.top.length) h += '<h2>Mejores clientes</h2><div class="card">' + c.top.map(t => row(esc(t.n), money(t.v,'USD'))).join('') + '</div>';
   h += '<div class="hint" style="margin-top:8px">Las compras y gastos se cuentan en el periodo en que ocurrieron. Los bolívares se pasan a dólares con la tasa de cada registro.</div>';
   h += '<div class="actions"><button class="btn sec" id="bCopy">Copiar resumen</button><button class="btn" id="bClose">Cerrar</button></div>';
