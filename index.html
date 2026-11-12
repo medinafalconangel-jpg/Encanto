@@ -163,6 +163,7 @@ function fdate(s){
 }
 function mlabel(mes){
   if(!mes) return 'Todos los meses';
+  if(String(mes).length === 4) return 'Año ' + mes;
   const p = mes.split('-').map(Number);
   const t = new Date(p[0],p[1]-1,1).toLocaleDateString('es-VE',{month:'long',year:'numeric'}).replace(' de ',' ');
   return t.charAt(0).toUpperCase() + t.slice(1);
@@ -360,6 +361,7 @@ function fillRes(){
        '<div class="bar"><span>Gastos</span><i style="width:' + (st.gastos / mx * 100) + '%;background:var(--amber)"></i></div></div>' +
        '<div class="hint" style="margin:10px 0 12px">Ganancia = ventas − compras − gastos del negocio (préstamos, vivienda, salud, educación, gastos personales y cambios de divisas van aparte). Los bolívares se pasan a dólares con la tasa de cada registro.</div>' +
        '<button class="btn" style="width:100%" data-act="cierre">Ver estado financiero del mes</button>' +
+       '<button class="btn" style="width:100%;margin-top:8px" data-act="cierreanio">Ver estado del año</button>' +
        (S.canWrite ? '<button class="btn" style="width:100%;margin-top:8px;background:transparent;color:var(--muted);border:1px solid var(--line)" data-act="importar">Importar historial (archivo)</button><input type="file" id="impFile" accept=".json,application/json" hidden>' : '') + '</div>';
 
   const last = sorted(S.movs).slice(0,6);
@@ -749,7 +751,7 @@ function openTasa(){
 let LAST_CIERRE = '';
 function buildCierre(mes){
   const eff = m => String(m.fechaCobro || m.fecha || '');
-  const inMes = m => String(m.fecha || '').slice(0,7) === mes;
+  const inMes = m => String(m.fecha || '').indexOf(mes) === 0;
   const ventasL = S.movs.filter(m => m.tipo === 'venta' && inMes(m));
   const ventas = ventasL.reduce((a,m) => a + usd(m), 0);
   const compras = S.movs.filter(m => m.tipo === 'compra' && inMes(m)).reduce((a,m) => a + usd(m), 0);
@@ -767,8 +769,8 @@ function buildCierre(mes){
     S.movs.forEach(m => {
       if(m.caja !== k || m.pagado === false) return;
       const e = eff(m);
-      if(e < mes + '-01') ini += m.signo * m.monto;
-      else if(e.slice(0,7) === mes){ if(m.signo > 0) ent += m.monto; else sal += m.monto; }
+      if(e < (mes.length === 4 ? mes + '-01-01' : mes + '-01')) ini += m.signo * m.monto;
+      else if(e.indexOf(mes) === 0){ if(m.signo > 0) ent += m.monto; else sal += m.monto; }
     });
     return {k, n:CAJAS[k].n, m:CAJAS[k].m, ini, ent, sal, fin: ini + ent - sal};
   });
@@ -798,10 +800,39 @@ function cierreText(c){
   if(!S.tasa) L.push('\nNota: sin tasa definida, los movimientos en Bs sin tasa propia no se convierten a dólares.');
   return L.join('\n');
 }
-function openCierre(){
-  const mes = S.mes || ymd(new Date()).slice(0,7);
+function rangoAnio(y, hasta){
+  const o = {ventas:0,compras:0,gastos:0,personal:0};
+  S.movs.forEach(m => {
+    const f = String(m.fecha || ''); if(f.slice(0,4) !== String(y) || f.slice(5,7) > hasta) return;
+    if(m.tipo === 'venta') o.ventas += usd(m);
+    else if(m.tipo === 'compra') o.compras += usd(m);
+    else if(m.tipo === 'gasto'){ if(NOOP.indexOf(m.cat) >= 0) o.personal += usd(m); else o.gastos += usd(m); }
+  });
+  o.util = o.ventas - o.compras - o.gastos; return o;
+}
+function openCierre(forzar){
+  const mes = forzar || S.mes || ymd(new Date()).slice(0,7);
+  const esAnio = mes.length === 4;
   const c = buildCierre(mes);
   LAST_CIERRE = cierreText(c);
+  let extra = '', extraTxt = '';
+  if(esAnio){
+    const hoy = ymd(new Date()); const hasta = (mes === hoy.slice(0,4)) ? hoy.slice(5,7) : '12';
+    const meses = []; for(let i = 1; i <= parseInt(hasta,10); i++){ const k = mes + '-' + String(i).padStart(2,'0'); const b = buildCierre(k); meses.push({k, v:b.ventas, c:b.compras, g:b.gastos, u:b.util}); }
+    const a = rangoAnio(parseInt(mes,10) - 1, hasta), n = rangoAnio(mes, hasta);
+    const dif = (x,y) => y ? ((x - y) / y * 100) : null;
+    const pct = d => d === null ? '' : ' (' + (d >= 0 ? '+' : '') + nf.format(d) + '%)';
+    extra = '<h2>Mes por mes</h2><div class="card">' + meses.map(x => '<div class="kv"><span>' + esc(mlabel(x.k).split(' ')[0]) + '</span><span>' + money(x.v,'USD') + ' · <b class="' + (x.u < 0 ? 'neg' : 'pos') + '">' + money(x.u,'USD') + '</b></span></div>').join('') + '<div class="hint" style="margin:6px 0 0">Ventas · Ganancia de cada mes</div></div>' +
+      '<h2>Contra el año pasado (mismos meses)</h2><div class="card">' +
+      '<div class="kv"><span>Ventas ' + (parseInt(mes,10)-1) + '</span><span>' + money(a.ventas,'USD') + '</span></div>' +
+      '<div class="kv"><span>Ventas ' + mes + '</span><b>' + money(n.ventas,'USD') + pct(dif(n.ventas,a.ventas)) + '</b></div>' +
+      '<div class="kv"><span>Ganancia ' + (parseInt(mes,10)-1) + '</span><span>' + money(a.util,'USD') + '</span></div>' +
+      '<div class="kv"><span>Ganancia ' + mes + '</span><b>' + money(n.util,'USD') + '</b></div></div>';
+    extraTxt = '\n\nMES POR MES (ventas · ganancia)\n' + meses.map(x => mlabel(x.k).split(' ')[0] + ': ' + money(x.v,'USD') + ' · ' + money(x.u,'USD')).join('\n') +
+      '\n\nCONTRA EL AÑO PASADO (mismos meses)\nVentas ' + (parseInt(mes,10)-1) + ': ' + money(a.ventas,'USD') + ' | ' + mes + ': ' + money(n.ventas,'USD') + pct(dif(n.ventas,a.ventas)) +
+      '\nGanancia ' + (parseInt(mes,10)-1) + ': ' + money(a.util,'USD') + ' | ' + mes + ': ' + money(n.util,'USD');
+    LAST_CIERRE += extraTxt;
+  }
   M.kind = 'view';
   const row = (a,b,cls) => '<div class="kv"><span>' + a + '</span><b class="' + (cls||'') + '">' + b + '</b></div>';
   let h = '<h3>Estado financiero · ' + esc(mlabel(mes)) + '</h3>';
@@ -817,9 +848,10 @@ function openCierre(){
        '<div class="kv"><span>Entró</span><span class="pos">+ ' + money(x.ent,x.m) + '</span></div>' +
        '<div class="kv"><span>Salió</span><span class="neg">− ' + money(x.sal,x.m) + '</span></div>' +
        '<div class="kv"><span>Saldo final</span><b>' + money(x.fin,x.m) + '</b></div></div>').join('') + '</div>';
+  h += extra;
   h += '<h2>Pendientes hoy</h2><div class="card">' + row('Por cobrar', money(c.cobrar,'USD'), 'pend') + row('Por pagar', money(c.pagar,'USD'), 'pend') + '</div>';
   if(c.top.length) h += '<h2>Mejores clientes</h2><div class="card">' + c.top.map(t => row(esc(t.n), money(t.v,'USD'))).join('') + '</div>';
-  h += '<div class="hint" style="margin-top:8px">Las compras y gastos se cuentan en el mes en que ocurrieron. Los bolívares se pasan a dólares con la tasa de cada registro.</div>';
+  h += '<div class="hint" style="margin-top:8px">Las compras y gastos se cuentan en el periodo en que ocurrieron. Los bolívares se pasan a dólares con la tasa de cada registro.</div>';
   h += '<div class="actions"><button class="btn sec" id="bCopy">Copiar resumen</button><button class="btn" id="bClose">Cerrar</button></div>';
   openSheet(1, h);
   $('#bClose').onclick = () => closeSheet(1);
@@ -879,6 +911,7 @@ document.addEventListener('click', e => {
     case 'cobrar': if(!S.canWrite) return toast('Solo lectura'); openCobrar(id); break;
     case 'cliver': openCliVer(id); break;
     case 'cierre': openCierre(); break;
+    case 'cierreanio': openCierre((S.mes || ymd(new Date())).slice(0,4)); break;
     case 'importar': { const fi = $('#impFile'); if(fi){ fi.value=''; fi.click(); } break; }
     case 'salir': askConfirm('¿Cerrar sesión en este teléfono?','Salir').then(ok => { if(ok && S.user && S.user.signOut) S.user.signOut().then(() => location.reload()); }); break;
     case 'gocaja': S.fCaja = id; S.mes = ''; setTab('mov'); break;
