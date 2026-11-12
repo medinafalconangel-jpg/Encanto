@@ -1,6 +1,6 @@
 /* Guarda la app en el teléfono para que abra aunque no haya internet.
    Los datos los guarda Firebase por su cuenta. */
-const CACHE = 'encanto-v5';
+const CACHE = 'encanto-v6';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'firebase-config.js'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

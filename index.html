@@ -886,7 +886,7 @@ function openCierre(forzar){
   if(c.personal > 0) h += '<div class="hint">Aparte, sin restar a la ganancia: ' + Object.keys(c.porCatP).map(k => esc(k) + ' ' + money(c.porCatP[k],'USD')).join(' · ') + '</div>';
   h += '<h2>Movimiento de cajas</h2><div class="list">' + c.cajas.map(x =>
        '<div class="card"><b>' + x.n + '</b>' +
-       '<div class="kv"><span>Al empezar el mes</span><span>' + money(x.ini,x.m) + '</span></div>' +
+       '<div class="kv"><span>' + (esAnio ? 'Al empezar el año' : 'Al empezar el mes') + '</span><span>' + money(x.ini,x.m) + '</span></div>' +
        '<div class="kv"><span>Entró</span><span class="pos">+ ' + money(x.ent,x.m) + '</span></div>' +
        '<div class="kv"><span>Salió</span><span class="neg">− ' + money(x.sal,x.m) + '</span></div>' +
        '<div class="kv"><span>Saldo final</span><b>' + money(x.fin,x.m) + '</b></div></div>').join('') + '</div>';
