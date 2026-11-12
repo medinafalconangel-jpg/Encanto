@@ -122,9 +122,53 @@ a{color:var(--rose)}
 .kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
 .kv:last-child{border:0}
 .kv span:first-child{color:var(--muted)}
+
+/* ---------- animaciones ---------- */
+:root{--ease:cubic-bezier(.22,.9,.3,1);--spring:cubic-bezier(.34,1.4,.5,1)}
+#splash{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .45s ease,visibility .45s}
+#splash.out{opacity:0;visibility:hidden}
+#splash .fl{width:132px;height:132px}
+#splash .fl path{transform-box:fill-box;transform-origin:50% 100%}
+#splash .fl path{opacity:0;animation:petal .7s var(--spring) forwards}
+#splash .ring1 path{animation-delay:.05s}#splash .ring2 path{animation-delay:.28s}#splash .ring3 path{animation-delay:.5s}
+@keyframes petal{from{opacity:0;transform:scale(.4) rotate(-18deg)}to{opacity:1;transform:none}}
+#splash .fl svg{width:100%;height:100%;animation:breathe 2.6s ease-in-out 1.2s infinite}
+@keyframes breathe{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.04) rotate(4deg)}}
+#splash .nm{font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;font-size:32px;color:var(--ink);opacity:0;animation:rise .7s var(--ease) .75s forwards}
+#splash .tg{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);opacity:0;animation:rise .7s var(--ease) .95s forwards}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.btn,.chip,.pill,.tab,.iconbtn,.item,.card.caja,.fab{transition:transform .18s var(--ease),background-color .2s,box-shadow .2s,color .2s}
+.btn:active,.chip:active,.pill:active,.iconbtn:active,.item:active,.card.caja:active{transform:scale(.97)}
+.tab:active{transform:scale(.93)}
+.fab:active{transform:scale(.9) rotate(90deg)}
+.fab{transition:transform .3s var(--spring),box-shadow .2s}
+.sheetwrap:not([hidden]){animation:fadeIn .22s ease}
+.sheetwrap:not([hidden]) .sheet{animation:sheetUp .38s var(--ease)}
+@media (min-width:700px){.sheetwrap:not([hidden]) .sheet{animation:popIn .3s var(--ease)}}
+.sheetwrap.closing{animation:fadeOut .2s ease forwards}
+.sheetwrap.closing .sheet{animation:sheetDown .22s ease-in forwards}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeOut{to{opacity:0}}
+@keyframes sheetUp{from{transform:translateY(60%);opacity:.4}to{transform:none;opacity:1}}
+@keyframes sheetDown{to{transform:translateY(40%);opacity:0}}
+@keyframes popIn{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
+.sheet::before{content:'';display:block;width:38px;height:5px;border-radius:3px;background:var(--line);margin:-6px auto 12px}
+@media (min-width:700px){.sheet::before{display:none}}
+#main.enter > *{animation:rise .38s var(--ease) both}
+#main.enter > *:nth-child(2){animation-delay:.04s}#main.enter > *:nth-child(3){animation-delay:.08s}
+.anim .card,.anim .grid > *,.anim .list > *{animation:rise .42s var(--ease) both}
+.anim .grid > *:nth-child(2){animation-delay:.04s}.anim .grid > *:nth-child(3){animation-delay:.08s}.anim .grid > *:nth-child(4){animation-delay:.12s}.anim .grid > *:nth-child(5){animation-delay:.16s}.anim .grid > *:nth-child(6){animation-delay:.2s}
+.anim .list > *:nth-child(n+2){animation-delay:.05s}.anim .list > *:nth-child(n+4){animation-delay:.1s}.anim .list > *:nth-child(n+6){animation-delay:.15s}
+.toast{animation:toastIn .35s var(--spring)}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,14px) scale(.96)}to{opacity:1;transform:translate(-50%,0)}}
+.toast.bye{transition:opacity .25s,transform .25s;opacity:0;transform:translate(-50%,8px)}
+.tab.on{transition:background-color .25s,color .25s}
+.big.count{display:inline-block}
+@media (prefers-reduced-motion:reduce){*,*::before{animation:none !important;transition:none !important}#splash .fl path,#splash .nm,#splash .tg{opacity:1}}
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true"><div class="fl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-215 -215 430 430"><g class="ring1"><clipPath id="c1"><path d="M0,0 L-95.26911934581186,-230 L95.26911934581186,-230Z"/></clipPath><g transform="rotate(22.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(67.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(112.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(157.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(202.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(247.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(292.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(337.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g></g><g class="ring2"><clipPath id="c2"><path d="M0,0 L-73.73001410241092,-178 L73.73001410241092,-178Z"/></clipPath><g transform="rotate(0.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(45.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(90.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(135.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(180.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(225.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(270.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(315.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g></g><g class="ring3"><clipPath id="c3"><path d="M0,0 L-49.705627484771405,-120 L49.705627484771405,-120Z"/></clipPath><g transform="rotate(22.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(67.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(112.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(157.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(202.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(247.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(292.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(337.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g></g></svg></div><div class="nm">Encanto</div><div class="tg">flores &amp; detalles</div></div>
 <div id="app">
   <header>
     <div class="brand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-215 -215 430 430"><clipPath id="c1"><path d="M0,0 L-95.26911934581186,-230 L95.26911934581186,-230Z"/></clipPath><g transform="rotate(22.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(67.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(112.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(157.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(202.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(247.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(292.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(337.5)"><path clip-path="url(#c1)" d="M0,0 C74,-88.2 74,-168.0 0,-210 C-74,-168.0 -74,-88.2 0,0Z" fill="#b5c3b6" stroke="#fbfaf6" stroke-width="9"/></g><clipPath id="c2"><path d="M0,0 L-73.73001410241092,-178 L73.73001410241092,-178Z"/></clipPath><g transform="rotate(0.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(45.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(90.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(135.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(180.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(225.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(270.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><g transform="rotate(315.0)"><path clip-path="url(#c2)" d="M0,0 C56,-66.36 56,-126.4 0,-158 C-56,-126.4 -56,-66.36 0,0Z" fill="#a9b08e" stroke="#fbfaf6" stroke-width="9"/></g><clipPath id="c3"><path d="M0,0 L-49.705627484771405,-120 L49.705627484771405,-120Z"/></clipPath><g transform="rotate(22.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(67.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(112.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(157.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(202.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(247.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(292.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g><g transform="rotate(337.5)"><path clip-path="url(#c3)" d="M0,0 C36,-42.0 36,-80.0 0,-100 C-36,-80.0 -36,-42.0 0,0Z" fill="#7b8570" stroke="#fbfaf6" stroke-width="8"/></g></svg>
@@ -263,8 +307,23 @@ function toast(msg){
   const t = document.createElement('div');
   t.className = 'toast'; t.textContent = msg;
   $('#toastHost').appendChild(t);
+  if(navigator.vibrate) try{ navigator.vibrate(8); }catch(e){}
+  setTimeout(() => t.classList.add('bye'), 2300);
   setTimeout(() => t.remove(), 2600);
 }
+const SPLASH_T0 = Date.now();
+let splashDone = false;
+function hideSplash(){
+  if(splashDone) return; splashDone = true;
+  const wait = Math.max(0, 1500 - (Date.now() - SPLASH_T0));
+  setTimeout(() => { const sp = $('#splash'); if(!sp) return; sp.classList.add('out'); setTimeout(() => sp.remove(), 600); animMain(); }, wait);
+}
+function animMain(){
+  const m = $('#main'); if(!m) return;
+  m.classList.remove('anim'); void m.offsetWidth; m.classList.add('anim');
+  clearTimeout(animMain.t); animMain.t = setTimeout(() => m.classList.remove('anim'), 900);
+}
+setTimeout(hideSplash, 6000);
 function updateBanner(){
   const b = $('#banner');
   let h = '';
@@ -285,6 +344,7 @@ function setTab(t){
   buildShell();
   fill();
   window.scrollTo(0,0);
+  animMain();
 }
 function buildShell(){
   const main = $('#main');
@@ -524,11 +584,17 @@ function fillCli(){
 /* ---------- hojas (modales) ---------- */
 const M = {f:null, fields:null, rerender:[], kind:''};
 function openSheet(n, html){
+  const w = $('#m' + n); if(w.classList.contains('closing')) w.classList.add('reopen');
   $('#s' + n).innerHTML = html;
   $('#m' + n).hidden = false;
   $('#s' + n).scrollTop = 0;
 }
-function closeSheet(n){ $('#m' + n).hidden = true; $('#s' + n).innerHTML = ''; if(n === 1){ M.f = null; M.fields = null; M.kind = ''; } }
+function closeSheet(n){
+  const w = $('#m' + n); if(n === 1){ M.f = null; M.fields = null; M.kind = ''; }
+  if(w.hidden) return;
+  w.classList.add('closing');
+  setTimeout(() => { w.classList.remove('closing'); if(!w.classList.contains('reopen')){ w.hidden = true; $('#s' + n).innerHTML = ''; } w.classList.remove('reopen'); }, 210);
+}
 ['m1','m2'].forEach(id => {
   $('#' + id).addEventListener('click', e => { if(e.target.id === id) closeSheet(id === 'm1' ? 1 : 2); });
 });
@@ -1186,7 +1252,7 @@ async function getBackend(){
   try{ fs = F.initializeFirestore(app, {localCache: F.persistentLocalCache({tabManager: F.persistentMultipleTabManager()})}); }
   catch(e){ fs = F.getFirestore(app); }
   let u = await new Promise(res => { const un = A.onAuthStateChanged(auth, x => { un(); res(x); }); });
-  if(!u) u = await showLogin(auth, A);
+  if(!u){ hideSplash(); u = await showLogin(auth, A); }
   /* una escritura se da por hecha al guardarse en el teléfono; se sincroniza sola cuando hay internet */
   const fast = p => Promise.race([p, new Promise(r => setTimeout(r, 1500))]);
   const docApi = r => ({
@@ -1236,13 +1302,13 @@ async function init(){
     const be = await getBackend();
     if(be){ S.db = be.db; S.user = be.user; }
   }catch(e){ console.error(e); }
-  if(!S.db){ clearTimeout(t); updateBanner(); return; }
+  if(!S.db){ clearTimeout(t); updateBanner(); hideSplash(); return; }
   if(S.user && S.user.signOut) $('#salirBtn').hidden = false;
   try{ S.uid = (await S.user.id()) || null; }catch(e){}
   updateBanner();
   const onErr = e => { S.err = (e && e.code) || 'desconocido'; updateBanner(); };
   S.db.collection('movs').onSnapshot(snap => {
-    S.movs = snap.docs.map(d => Object.assign({id:d.id}, d.data())); S.loaded.movs = true; clearTimeout(t); S.slow = false; S.err = ''; fill();
+    S.movs = snap.docs.map(d => Object.assign({id:d.id}, d.data())); S.loaded.movs = true; hideSplash(); clearTimeout(t); S.slow = false; S.err = ''; fill();
   }, onErr);
   S.db.collection('clientes').onSnapshot(snap => {
     S.cli = snap.docs.map(d => Object.assign({id:d.id}, d.data())); S.loaded.cli = true; fill();
