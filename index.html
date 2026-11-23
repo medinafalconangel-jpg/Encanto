@@ -1674,8 +1674,8 @@ async function seedPrestamo(){
   if(!(await askConfirm('¿Cargar el préstamo de $1.000 del 06/08/2025 al 5% mensual, con los pagos de $62 y $300?','Cargar'))) return;
   try{
     await S.db.collection('prestamos').doc().set({tipo:'debemos', nombre:'Préstamo 1.000 $', persona:'', monto:1000, fecha:'2025-08-06', tasa:0.05, dia:6,
-      notas:'Cargado desde el archivo de Numbers. La fecha del pago de $300 no estaba en el archivo: revísala.', creado:Date.now(), por:S.uid || '',
-      pagos:[{id:'g1', fecha:'2025-09-26', tipo:'interes', monto:62, nota:'Pago septiembre / 12$ octubre'}, {id:'g2', fecha:'2025-10-06', tipo:'interes', monto:300, nota:'Pago universidad abonado a los intereses'}]});
+      notas:'Cargado desde el archivo de Numbers. La fecha del pago de $300 es aproximada (mayo 2026): ajústala si la sabes exacta.', creado:Date.now(), por:S.uid || '',
+      pagos:[{id:'g1', fecha:'2025-09-26', tipo:'interes', monto:62, nota:'Pago septiembre / 12$ octubre'}, {id:'g2', fecha:'2026-05-23', tipo:'interes', monto:300, nota:'Pago universidad abonado a los intereses'}]});
     toast('Préstamo cargado');
   }catch(e){ toast('No se pudo cargar'); }
 }
