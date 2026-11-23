@@ -102,7 +102,7 @@ label.chk{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--in
 .search{margin:6px 0 10px}
 .empty{color:var(--muted);text-align:center;padding:26px 10px;font-size:14px}
 .tabbar{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom));z-index:5}
-.tabbar .in{max-width:780px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr 1fr;gap:6px;align-items:center}
+.tabbar .in{max-width:780px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr auto 1fr 1fr;gap:6px;align-items:center}
 .tab{border:0;background:none;padding:9px 4px;border-radius:12px;font-size:14px;color:var(--muted);font-weight:600}
 .tab.on{color:var(--rose);background:var(--rose-soft)}
 .fab{width:54px;height:54px;border-radius:50%;border:0;background:var(--rose);color:#fff;font-size:30px;line-height:1;margin:-22px 6px 0;box-shadow:0 6px 16px rgba(70,84,62,.35)}
@@ -164,6 +164,59 @@ a{color:var(--rose)}
 .toast.bye{transition:opacity .25s,transform .25s;opacity:0;transform:translate(-50%,8px)}
 .tab.on{transition:background-color .25s,color .25s}
 .big.count{display:inline-block}
+
+/* préstamos */
+.tblwrap{padding:4px 6px;overflow-x:auto}
+.ptbl{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+.ptbl th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:right;padding:8px 6px;border-bottom:1px solid var(--line);font-weight:700}
+.ptbl td{text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ptbl th:nth-child(-n+2),.ptbl td:nth-child(-n+2){text-align:left}
+.ptbl tr.fut td{color:var(--muted);opacity:.6}
+.ptbl tr:last-child td{border-bottom:0}
+@media (max-width:430px){.tab{font-size:12.5px;padding:9px 2px}}
+/* informe */
+#report{position:fixed;inset:0;z-index:90;background:#e9e9e4;overflow:auto;-webkit-overflow-scrolling:touch}
+#report[hidden]{display:none}
+body.rp-open{overflow:hidden}
+.rp-tool{position:sticky;top:0;z-index:2;display:flex;gap:8px;justify-content:flex-end;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:rgba(233,233,228,.92);backdrop-filter:blur(8px)}
+.rp-doc{padding:0 10px 40px;color:#2f312d}
+.rp-page{background:#fff;max-width:820px;margin:0 auto 16px;padding:34px 34px 26px;border-radius:6px;box-shadow:0 2px 14px rgba(0,0,0,.08);font-size:12.5px;line-height:1.45}
+.rp-head{display:flex;align-items:center;gap:12px;border-bottom:2px solid #5f6d57;padding-bottom:14px;margin-bottom:18px}
+.rp-head svg{width:54px;height:54px;flex:none}
+.rp-brand{font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;font-size:26px;line-height:1;color:#3a3b38}
+.rp-tag{font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:#7b8570;margin-top:4px}
+.rp-meta{margin-left:auto;text-align:right;font-weight:700;color:#454a42;font-size:13px}.rp-meta span{font-weight:400;color:#7c8078;font-size:11px}
+.rp-page h1{font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;font-size:22px;margin:0 0 2px;color:#3a3b38;font-weight:600}
+.rp-sub{color:#7c8078;margin-bottom:6px}
+.rp-page h2{font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:#5f6d57;margin:20px 0 8px;font-weight:700}
+.rp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rp-kpis > div{background:#f4f5ef;border-radius:8px;padding:10px 12px}
+.rp-kpis span{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;color:#7c8078}
+.rp-kpis b{font-size:17px;color:#3a3b38;font-variant-numeric:tabular-nums}.rp-kpis em{display:block;font-style:normal;font-size:11px;color:#7c8078}
+.rp-t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.rp-t th{background:#5f6d57;color:#fff;font-weight:600;font-size:10.5px;text-align:left;padding:6px 8px}
+.rp-t td{padding:5px 8px;border-bottom:1px solid #e4e5dc}
+.rp-t .n{text-align:right}
+.rp-t tr.fut td{color:#a3a69d}
+.rp-t tr.tot td{font-weight:700;background:#f4f5ef;border-top:1.5px solid #5f6d57}
+.rp-kv td:nth-child(odd){color:#7c8078}.rp-kv td:nth-child(even){font-weight:600}
+.rp-t .neg,.rp-kpis .neg{color:#a8483c}.rp-t .pos{color:#4f7a55}
+.rp-note{color:#7c8078;font-size:11px;margin-top:6px}
+.rp-foot{margin-top:26px;padding-top:10px;border-top:1px solid #e4e5dc;color:#a3a69d;font-size:10px;text-align:center}
+@media (max-width:600px){.rp-page{padding:20px 16px;font-size:11.5px}.rp-kpis{grid-template-columns:1fr 1fr}.rp-t{font-size:10.5px}.rp-t td,.rp-t th{padding:4px 5px}}
+@media print{
+  @page{size:A4;margin:12mm}
+  html,body{background:#fff !important}
+  body > *:not(#report){display:none !important}
+  #report{position:static;background:#fff;overflow:visible}
+  .rp-tool{display:none}
+  .rp-doc{padding:0}
+  .rp-page{box-shadow:none;border-radius:0;padding:0;margin:0;max-width:none;page-break-after:always;font-size:11px}
+  .rp-page:last-child{page-break-after:auto}
+  .rp-kpis{grid-template-columns:repeat(4,1fr)}
+  .rp-t tr{page-break-inside:avoid}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 /* transiciones suaves */
 header{view-transition-name:hdr}.tabbar{view-transition-name:tabs}#main{view-transition-name:main}
 ::view-transition-old(root),::view-transition-new(root){animation:none}
@@ -218,9 +271,10 @@ html{scroll-behavior:smooth}
 
 <nav class="tabbar"><div class="in">
   <button class="tab on" data-act="tab" data-tab="res">Resumen</button>
-  <button class="fab" id="fab" data-act="new" aria-label="Registrar">+</button>
   <button class="tab" data-act="tab" data-tab="mov">Movimientos</button>
+  <button class="fab" id="fab" data-act="new" aria-label="Registrar">+</button>
   <button class="tab" data-act="tab" data-tab="cli">Contactos</button>
+  <button class="tab" data-act="tab" data-tab="pre">Préstamos</button>
 </div></nav>
 
 <div class="sheetwrap" id="m1" hidden><div class="sheet" id="s1"></div></div>
@@ -297,7 +351,7 @@ const S = {
   tab:'res', mes: ymd(new Date()).slice(0,7),
   movs:[], cli:[], tasa:0,
   db:null, user:null, uid:null, canWrite:true,
-  loaded:{movs:false,cli:false,tasa:false}, slow:false, err:'',
+  loaded:{movs:false,cli:false,tasa:false,prest:false}, prest:[], slow:false, err:'',
   fCaja:'', fTipo:'', q:'', qc:'',
   names:{}, asked:{}
 };
@@ -351,7 +405,7 @@ function slideList(dir, fn){
   let x0 = 0, y0 = 0, t0 = 0, ok = false;
   document.addEventListener('touchstart', e => {
     const t = e.target;
-    ok = e.touches.length === 1 && !t.closest('.sheetwrap, .chips, .seg, input, select, textarea, .tabbar, header');
+    ok = e.touches.length === 1 && !t.closest('#report, .sheetwrap, .chips, .seg, input, select, textarea, .tabbar, header');
     if(!ok) return; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now();
   }, {passive:true});
   document.addEventListener('touchend', e => {
@@ -402,7 +456,7 @@ function updateBanner(){
   bcvPaint();
 }
 
-const TAB_ORDER = ['res','mov','cli'];
+const TAB_ORDER = ['res','mov','cli','pre'];
 function slideMain(dir, fn){
   const m = $('#main');
   if(document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches){
@@ -429,6 +483,7 @@ function setTabNow(t){
 function buildShell(){
   const main = $('#main');
   if(S.tab === 'res') main.innerHTML = '<div id="res"></div>';
+  else if(S.tab === 'pre') main.innerHTML = '<div id="pre"></div>';
   else if(S.tab === 'mov'){
     main.innerHTML =
       '<div class="monthnav"><button class="iconbtn" data-act="mesprev" aria-label="Mes anterior">‹</button>' +
@@ -456,6 +511,7 @@ function buildShell(){
 }
 function fill(){
   if(S.tab === 'res') fillRes();
+  else if(S.tab === 'pre') fillPre();
   else if(S.tab === 'mov') fillMov();
   else fillCli();
   updateBanner();
@@ -534,6 +590,7 @@ function fillRes(){
        (S.canWrite ? '<button class="btn" style="width:100%;margin-top:8px;background:transparent;color:var(--muted);border:1px solid var(--line)" data-act="importar">Importar historial (archivo)</button><input type="file" id="impFile" accept=".json,application/json" hidden>' : '') + '</div>';
 
   const last = sorted(S.movs).slice(0,6);
+  if(S.prest.length){ const pt = prestTotals(); if(pt.deb.n || pt.nos.n) h += '<h2>Préstamos</h2><button class="card item" style="width:100%" data-act="gopre"><div class="l"><div class="t">Intereses por pagar</div><div class="s">Capital pendiente ' + money(pt.deb.cap,'USD') + (pt.nos.n ? ' · nos deben ' + money(pt.nos.int + pt.nos.cap,'USD') : '') + '</div></div><div class="r"><div class="a ' + (pt.deb.int > 0 ? 'neg' : '') + '">' + money(pt.deb.int,'USD') + '</div><div class="u">ver detalle ›</div></div></button>'; }
   h += '<h2>Últimos movimientos</h2>';
   h += last.length ? '<div class="list">' + last.map(m => itemHtml(m)).join('') + '</div>'
                    : '<div class="empty">Aún no hay movimientos. Toca <b>+</b> para registrar el primero (puedes empezar con los saldos iniciales de cada caja).</div>';
@@ -1450,6 +1507,258 @@ async function doExport(app){
   toast('Archivo listo para ' + app);
 }
 
+/* ---------- préstamos ---------- */
+const fdl = f => { const p = String(f || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; };
+const MESL = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function venceN(fecha, n, dia){
+  const p = String(fecha).split('-').map(Number);
+  const y = p[0], m = p[1] - 1 + n;
+  const last = new Date(y, m + 1, 0).getDate();
+  return ymd(new Date(y, m, Math.min(dia || p[2], last)));
+}
+function calcPrestamo(p, hasta){
+  hasta = hasta || ymd(new Date());
+  const pagos = (p.pagos || []).slice().sort((a,b) => String(a.fecha).localeCompare(String(b.fecha)));
+  const capAntes = f => pagos.filter(x => x.tipo === 'capital' && x.fecha < f).reduce((a,x) => a + x.monto, 0);
+  const lastPago = pagos.length ? pagos[pagos.length - 1].fecha : p.fecha;
+  const fin = [hasta, lastPago].sort().pop();
+  const rows = []; let accI = 0, accP = 0;
+  for(let n = 1; n <= 600; n++){
+    const v = venceN(p.fecha, n, p.dia), next = venceN(p.fecha, n + 1, p.dia);
+    const cap = Math.max(0, p.monto - capAntes(v));
+    if(cap <= 0.004 && v > fin) break;
+    const int = cap > 0.004 ? r2(cap * p.tasa) : 0;
+    const pagI = pagos.filter(x => x.tipo !== 'capital' && (n === 1 ? x.fecha < next : (x.fecha >= v && x.fecha < next))).reduce((a,x) => a + x.monto, 0);
+    const pagC = pagos.filter(x => x.tipo === 'capital' && (n === 1 ? x.fecha < next : (x.fecha >= v && x.fecha < next))).reduce((a,x) => a + x.monto, 0);
+    accI += int; accP += pagI;
+    rows.push({n, vence:v, cap, int, accI:r2(accI), pagI, pagC, accP:r2(accP), pend:r2(accI - accP), vencido: v <= hasta});
+    if(v > fin && n >= 3 && rows.filter(r => r.vence > fin).length >= 3) break;
+  }
+  const venc = rows.filter(r => r.vencido);
+  const gen = venc.reduce((a,r) => a + r.int, 0);
+  const pagInt = pagos.filter(x => x.tipo !== 'capital' && x.fecha <= hasta).reduce((a,x) => a + x.monto, 0);
+  const pagCap = pagos.filter(x => x.tipo === 'capital' && x.fecha <= hasta).reduce((a,x) => a + x.monto, 0);
+  const capPend = Math.max(0, p.monto - pagCap);
+  const prox = rows.find(r => !r.vencido && r.cap > 0.004);
+  const porPagar = r2(gen - pagInt);
+  return {rows, hasta, gen:r2(gen), pagInt:r2(pagInt), pagCap:r2(pagCap), capPend:r2(capPend), porPagar, total:r2(capPend + Math.max(0, porPagar)), meses:venc.length, prox, pagos, saldada: capPend <= 0.004 && porPagar <= 0.004};
+}
+const debemos = p => p.tipo !== 'nosdeben';
+function prestTotals(){
+  const o = {deb:{int:0, cap:0, n:0}, nos:{int:0, cap:0, n:0}};
+  S.prest.forEach(p => { const c = calcPrestamo(p), k = debemos(p) ? o.deb : o.nos; if(c.saldada) return; k.int += Math.max(0, c.porPagar); k.cap += c.capPend; k.n++; });
+  return o;
+}
+function fillPre(){
+  const el = $('#pre'); if(!el) return;
+  if(!S.loaded.prest){ el.innerHTML = '<div class="empty">Cargando…</div>'; return; }
+  const t = prestTotals();
+  let h = '';
+  if(S.prest.length){
+    h += '<div class="card total" style="margin-top:6px"><div class="lbl">Intereses por pagar hoy</div><div class="big">' + money(t.deb.int,'USD') + '</div>' +
+      '<div class="lbl" style="text-transform:none;letter-spacing:0;font-size:13px">Capital pendiente ' + money(t.deb.cap,'USD') + ' · ' + t.deb.n + ' préstamo' + (t.deb.n === 1 ? '' : 's') + '</div></div>';
+    if(t.nos.n) h += '<div class="card" style="margin-top:10px"><div class="kv"><span>Nos deben en intereses</span><b class="pos">' + money(t.nos.int,'USD') + '</b></div><div class="kv"><span>Capital que nos deben</span><span>' + money(t.nos.cap,'USD') + '</span></div></div>';
+  }
+  h += '<div class="row" style="margin:14px 2px 8px;justify-content:space-between"><h2 style="margin:0">Préstamos</h2><div class="row" style="gap:6px">' +
+    (S.prest.length ? '<button class="btn small sec" data-act="preinfall">Informe</button>' : '') +
+    (S.canWrite ? '<button class="btn small" data-act="prenew">+ Préstamo</button>' : '') + '</div></div>';
+  if(!S.prest.length){
+    h += '<div class="empty">Aún no hay préstamos. Registra uno para ver cuánto se debe en intereses cada mes.</div>';
+    if(S.canWrite) h += '<button class="btn sec" style="width:100%;margin-top:10px" data-act="preseed">Cargar el préstamo de $1.000 (de tu archivo de Numbers)</button>';
+  } else {
+    h += '<div class="list">' + S.prest.slice().sort((a,b) => String(b.fecha).localeCompare(String(a.fecha))).map(p => {
+      const c = calcPrestamo(p);
+      return '<button class="item" data-act="prever" data-id="' + esc(p.id) + '"><div class="l"><div class="t">' + esc(p.nombre || 'Préstamo') + '</div>' +
+        '<div class="s">' + (debemos(p) ? 'Debemos' : 'Nos deben') + (p.persona ? ' · ' + esc(p.persona) : '') + ' · ' + nf.format(p.tasa * 100) + '% mensual' +
+        (c.saldada ? ' · saldado' : c.prox ? ' · vence ' + esc(fdl(c.prox.vence)) : '') + '</div></div>' +
+        '<div class="r"><div class="a ' + (c.porPagar > 0 ? (debemos(p) ? 'neg' : 'pos') : '') + '">' + money(c.porPagar,'USD') + '</div><div class="u">intereses · capital ' + money(c.capPend,'USD') + '</div></div></button>';
+    }).join('') + '</div>';
+  }
+  el.innerHTML = h;
+}
+function preStat(l, v, cls){ return '<div class="stat"><div class="lbl">' + l + '</div><div class="v ' + (cls || '') + '">' + v + '</div></div>'; }
+function openPreVer(id){
+  const p = S.prest.find(x => x.id === id); if(!p) return;
+  const c = calcPrestamo(p), d = debemos(p);
+  let h = '<h3>' + esc(p.nombre || 'Préstamo') + '</h3>' +
+    '<div class="hint" style="margin-top:-6px">' + (d ? 'Lo debemos' : 'Nos lo deben') + (p.persona ? ' · ' + esc(p.persona) : '') + ' · entregado el ' + esc(fdl(p.fecha)) + '</div>' +
+    '<div class="card"><div class="stats">' +
+    preStat(d ? 'Intereses por pagar' : 'Intereses por cobrar', money(c.porPagar,'USD'), c.porPagar > 0 ? (d ? 'neg' : 'pos') : '') +
+    preStat('Capital pendiente', money(c.capPend,'USD')) +
+    preStat('Total ' + (d ? 'adeudado' : 'por cobrar'), money(c.total,'USD')) +
+    preStat('Próximo vencimiento', c.prox ? esc(fdl(c.prox.vence)) + ' · ' + money(c.prox.int,'USD') : '—') +
+    '</div><div class="hint" style="margin:8px 0 0">' + c.meses + ' meses vencidos × ' + nf.format(p.tasa * 100) + '% = ' + money(c.gen,'USD') + ' generados, ' + money(c.pagInt,'USD') + ' pagados. Si sale negativo, se pagó por adelantado.</div></div>' +
+    '<h2>Mes a mes</h2><div class="card tblwrap"><table class="ptbl"><thead><tr><th>#</th><th>Vence</th><th>Interés</th><th>Pagado</th><th>Por pagar</th></tr></thead><tbody>' +
+    c.rows.map(r => '<tr class="' + (r.vencido ? '' : 'fut') + '"><td>' + r.n + '</td><td>' + esc(fdl(r.vence)) + '</td><td>' + nf.format(r.int) + '</td><td>' + (r.pagI ? nf.format(r.pagI) : (r.pagC ? 'cap ' + nf.format(r.pagC) : '')) + '</td><td class="' + (r.pend > 0 ? 'neg' : 'pos') + '"><b>' + nf.format(r.pend) + '</b></td></tr>').join('') +
+    '</tbody></table></div><div class="hint">Los meses en gris todavía no vencen.</div>' +
+    '<h2>Pagos</h2>' + (c.pagos.length ? '<div class="list">' + c.pagos.slice().reverse().map(x =>
+      '<button class="item" data-act="prepago" data-id="' + esc(p.id) + '" data-pid="' + esc(x.id) + '"><div class="l"><div class="t">' + (x.tipo === 'capital' ? 'Abono a capital' : 'Pago de intereses') + '</div><div class="s">' + esc(fdl(x.fecha)) + (x.nota ? ' · ' + esc(x.nota) : '') + '</div></div><div class="r"><div class="a">' + money(x.monto,'USD') + '</div></div></button>').join('') + '</div>'
+      : '<div class="empty">Sin pagos registrados.</div>') +
+    (p.notas ? '<div class="hint" style="margin-top:10px">' + esc(p.notas) + '</div>' : '') +
+    '<div class="row2" style="margin-top:14px"><button class="btn sec" id="pInf">Informe PDF</button><button class="btn sec" id="pXls">Excel / Numbers</button></div>' +
+    '<div class="actions">' + (S.canWrite ? '<button class="btn sec" id="pEdit">Editar</button>' : '') + '<button class="btn sec" id="pClose">Cerrar</button>' + (S.canWrite ? '<button class="btn" id="pPago">Registrar pago</button>' : '') + '</div>';
+  openSheet(1, h); M.kind = 'view';
+  $('#pClose').onclick = () => closeSheet(1);
+  $('#pInf').onclick = () => { closeSheet(1); openInforme([p]); };
+  $('#pXls').onclick = () => exportPrest([p]);
+  if($('#pEdit')) $('#pEdit').onclick = () => openPreForm(p);
+  if($('#pPago')) $('#pPago').onclick = () => openPagoForm(p);
+}
+function preFields(f){
+  return '<div class="seg" style="margin-bottom:10px"><button type="button" class="chip ' + (f.tipo !== 'nosdeben' ? 'on' : '') + '" data-act="pretipo" data-id="debemos">Lo debemos</button><button type="button" class="chip ' + (f.tipo === 'nosdeben' ? 'on' : '') + '" data-act="pretipo" data-id="nosdeben">Nos deben</button></div>' +
+    '<label>Nombre<input name="nombre" value="' + esc(f.nombre) + '" placeholder="Ej. Préstamo 1.000 $"></label>' +
+    '<label>' + (f.tipo === 'nosdeben' ? 'A quién se le prestó' : 'Quién nos prestó') + ' (opcional)<input name="persona" value="' + esc(f.persona) + '"></label>' +
+    '<div class="row2"><label>Monto ($)<input name="monto" inputmode="decimal" value="' + esc(f.monto) + '" placeholder="0,00"></label>' +
+    '<label>Fecha de entrega<input type="date" name="fecha" value="' + esc(f.fecha) + '"></label></div>' +
+    '<div class="row2"><label>Interés mensual (%)<input name="tasa" inputmode="decimal" value="' + esc(f.tasa) + '" placeholder="5"></label>' +
+    '<label>Día de pago<input name="dia" inputmode="numeric" value="' + esc(f.dia) + '" placeholder="6"></label></div>' +
+    '<div class="hint">Interés simple: cada mes se cobra el % sobre el capital que falte por devolver.</div>' +
+    '<label>Notas (opcional)<input name="notas" value="' + esc(f.notas) + '"></label>';
+}
+function openPreForm(p){
+  M.f = p ? {tipo:p.tipo || 'debemos', nombre:p.nombre || '', persona:p.persona || '', monto:String(p.monto).replace('.',','), fecha:p.fecha, tasa:String(r2(p.tasa * 100)).replace('.',','), dia:String(p.dia || ''), notas:p.notas || ''}
+          : {tipo:'debemos', nombre:'', persona:'', monto:'', fecha:ymd(new Date()), tasa:'', dia:'', notas:''};
+  M.fields = preFields; M.kind = 'pre'; M.rerender = [];
+  openSheet(1, '<h3>' + (p ? 'Editar préstamo' : 'Nuevo préstamo') + '</h3><div id="fbody">' + preFields(M.f) + '</div><div class="actions">' +
+    (p ? '<button class="btn danger" id="pDel">Eliminar</button>' : '') + '<button class="btn sec" id="bCancel">Cancelar</button><button class="btn" id="bSave">Guardar</button></div>');
+  $('#bCancel').onclick = () => p ? openPreVer(p.id) : closeSheet(1);
+  if($('#pDel')) $('#pDel').onclick = async () => { if(!(await askConfirm('¿Eliminar este préstamo y sus pagos?','Eliminar'))) return; try{ await S.db.collection('prestamos').doc(p.id).delete(); closeSheet(1); toast('Préstamo eliminado'); }catch(e){ toast('No se pudo eliminar'); } };
+  $('#bSave').onclick = async () => {
+    const f = M.f, monto = num(f.monto), tasa = num(f.tasa) / 100, dia = parseInt(f.dia, 10) || parseInt(String(f.fecha).slice(8), 10);
+    if(!(monto > 0)) return toast('Escribe el monto');
+    if(!f.fecha) return toast('Escribe la fecha de entrega');
+    if(!(tasa >= 0)) return toast('Escribe el interés mensual');
+    const o = {tipo:f.tipo, nombre:(f.nombre || '').trim() || ('Préstamo ' + nf.format(monto) + ' $'), persona:(f.persona || '').trim(), monto:r2(monto), fecha:f.fecha, tasa, dia:Math.min(31, Math.max(1, dia)), notas:(f.notas || '').trim()};
+    $('#bSave').disabled = true;
+    try{
+      if(p) await S.db.collection('prestamos').doc(p.id).update(o);
+      else { o.pagos = []; o.creado = Date.now(); o.por = S.uid || ''; const r = S.db.collection('prestamos').doc(); await r.set(o); }
+      closeSheet(1); toast('Préstamo guardado');
+    }catch(e){ $('#bSave').disabled = false; toast('No se pudo guardar'); }
+  };
+}
+function pagoFields(f){
+  return '<div class="seg" style="margin-bottom:10px"><button type="button" class="chip ' + (f.tipo !== 'capital' ? 'on' : '') + '" data-act="pagotipo" data-id="interes">Intereses</button><button type="button" class="chip ' + (f.tipo === 'capital' ? 'on' : '') + '" data-act="pagotipo" data-id="capital">Abono a capital</button></div>' +
+    '<div class="row2"><label>Monto ($)<input name="monto" inputmode="decimal" value="' + esc(f.monto) + '" placeholder="0,00"></label><label>Fecha<input type="date" name="fecha" value="' + esc(f.fecha) + '"></label></div>' +
+    '<label>Nota (opcional)<input name="nota" value="' + esc(f.nota) + '" placeholder="Ej. pago de septiembre"></label>' +
+    (f.editId ? '' : '<label class="chk"><input type="checkbox" name="enCaja"' + (f.enCaja ? ' checked' : '') + '> ' + (f.debemos ? 'Descontarlo de una caja' : 'Sumarlo a una caja') + '</label>' +
+    (f.enCaja ? '<label>Caja<select name="caja">' + ['zelle','efe_usd'].map(k => '<option value="' + k + '"' + (f.caja === k ? ' selected' : '') + '>' + CAJAS[k].n + '</option>').join('') + '</select></label><div class="hint">Se guarda también como movimiento (categoría Préstamos), sin afectar la ganancia.</div>' : ''));
+}
+function openPagoForm(p, pago){
+  M.f = pago ? {tipo:pago.tipo, monto:String(pago.monto).replace('.',','), fecha:pago.fecha, nota:pago.nota || '', editId:pago.id, debemos:debemos(p)}
+             : {tipo:'interes', monto:'', fecha:ymd(new Date()), nota:'', enCaja:false, caja:'zelle', debemos:debemos(p)};
+  M.fields = pagoFields; M.kind = 'pago'; M.rerender = ['enCaja'];
+  openSheet(1, '<h3>' + (pago ? 'Editar pago' : 'Registrar pago') + '</h3><div class="hint" style="margin-top:-6px">' + esc(p.nombre) + '</div><div id="fbody">' + pagoFields(M.f) + '</div><div class="actions">' +
+    (pago ? '<button class="btn danger" id="gDel">Eliminar</button>' : '') + '<button class="btn sec" id="bCancel">Cancelar</button><button class="btn" id="bSave">Guardar</button></div>');
+  $('#bCancel').onclick = () => openPreVer(p.id);
+  const save = async pagos => { await S.db.collection('prestamos').doc(p.id).update({pagos}); };
+  if($('#gDel')) $('#gDel').onclick = async () => { try{ await save((p.pagos || []).filter(x => x.id !== pago.id)); toast('Pago eliminado'); openPreVer(p.id); }catch(e){ toast('No se pudo eliminar'); } };
+  $('#bSave').onclick = async () => {
+    const f = M.f, monto = num(f.monto);
+    if(!(monto > 0)) return toast('Escribe el monto');
+    const item = {id: pago ? pago.id : ('g' + Date.now().toString(36)), fecha:f.fecha, tipo:f.tipo === 'capital' ? 'capital' : 'interes', monto:r2(monto), nota:(f.nota || '').trim()};
+    $('#bSave').disabled = true;
+    try{
+      const list = (p.pagos || []).filter(x => x.id !== item.id).concat([item]);
+      if(f.enCaja && !pago){
+        const d = debemos(p);
+        await S.db.collection('movs').doc().set({fecha:f.fecha, tipo: d ? 'gasto' : 'ingreso', signo: d ? -1 : 1, caja:f.caja, moneda:'USD', monto:item.monto, pagado:true, tasa:null,
+          clienteId:'', clienteNombre:'', tercero:p.persona || '', cat: d ? 'Préstamos' : '', desc:(item.tipo === 'capital' ? 'Abono a capital · ' : 'Intereses · ') + p.nombre, por:S.uid || '', creado:Date.now(), grupo:'', prestamoId:p.id});
+      }
+      await save(list);
+      toast('Pago guardado'); p.pagos = list; openPreVer(p.id);
+    }catch(e){ $('#bSave').disabled = false; toast('No se pudo guardar'); }
+  };
+}
+async function seedPrestamo(){
+  if(!(await askConfirm('¿Cargar el préstamo de $1.000 del 06/08/2025 al 5% mensual, con los pagos de $62 y $300?','Cargar'))) return;
+  try{
+    await S.db.collection('prestamos').doc().set({tipo:'debemos', nombre:'Préstamo 1.000 $', persona:'', monto:1000, fecha:'2025-08-06', tasa:0.05, dia:6,
+      notas:'Cargado desde el archivo de Numbers. La fecha del pago de $300 no estaba en el archivo: revísala.', creado:Date.now(), por:S.uid || '',
+      pagos:[{id:'g1', fecha:'2025-09-26', tipo:'interes', monto:62, nota:'Pago septiembre / 12$ octubre'}, {id:'g2', fecha:'2025-10-06', tipo:'interes', monto:300, nota:'Pago universidad abonado a los intereses'}]});
+    toast('Préstamo cargado');
+  }catch(e){ toast('No se pudo cargar'); }
+}
+/* informe detallado (PDF) */
+function informeHtml(list){
+  const hoy = ymd(new Date()), hoyTxt = new Date().toLocaleDateString('es-VE',{day:'numeric',month:'long',year:'numeric'});
+  const logo = ($('.brand svg') || {outerHTML:''}).outerHTML;
+  const head = '<div class="rp-head">' + logo + '<div><div class="rp-brand">Encanto</div><div class="rp-tag">flores &amp; detalles</div></div><div class="rp-meta">Informe de préstamo' + (list.length > 1 ? 's' : '') + '<br><span>Generado el ' + esc(hoyTxt) + '</span></div></div>';
+  let h = '';
+  if(list.length > 1){
+    const t = prestTotals();
+    h += '<section class="rp-page">' + head + '<h1>Resumen de préstamos</h1><div class="rp-kpis">' +
+      '<div><span>Intereses por pagar</span><b>' + money(t.deb.int,'USD') + '</b></div><div><span>Capital pendiente</span><b>' + money(t.deb.cap,'USD') + '</b></div>' +
+      (t.nos.n ? '<div><span>Intereses por cobrar</span><b>' + money(t.nos.int,'USD') + '</b></div>' : '') + '</div>' +
+      '<table class="rp-t"><thead><tr><th>Préstamo</th><th>Tipo</th><th>Entregado</th><th class="n">Monto</th><th class="n">Tasa</th><th class="n">Capital pend.</th><th class="n">Intereses pend.</th></tr></thead><tbody>' +
+      list.map(p => { const c = calcPrestamo(p, hoy); return '<tr><td>' + esc(p.nombre) + '</td><td>' + (debemos(p) ? 'Debemos' : 'Nos deben') + '</td><td>' + esc(fdl(p.fecha)) + '</td><td class="n">' + money(p.monto,'USD') + '</td><td class="n">' + nf.format(p.tasa * 100) + '%</td><td class="n">' + money(c.capPend,'USD') + '</td><td class="n"><b>' + money(c.porPagar,'USD') + '</b></td></tr>'; }).join('') +
+      '</tbody></table></section>';
+  }
+  list.forEach(p => {
+    const c = calcPrestamo(p, hoy), d = debemos(p);
+    const movs = sorted(S.movs.filter(m => m.prestamoId === p.id));
+    h += '<section class="rp-page">' + head + '<h1>' + esc(p.nombre) + '</h1>' +
+      '<div class="rp-sub">' + (d ? 'Préstamo recibido (lo debemos)' : 'Préstamo otorgado (nos deben)') + (p.persona ? ' · ' + esc(p.persona) : '') + '</div>' +
+      '<h2>Situación al ' + esc(fdl(hoy)) + '</h2><div class="rp-kpis">' +
+      '<div><span>' + (d ? 'Intereses por pagar' : 'Intereses por cobrar') + '</span><b class="' + (c.porPagar > 0 ? 'neg' : '') + '">' + money(c.porPagar,'USD') + '</b></div>' +
+      '<div><span>Capital pendiente</span><b>' + money(c.capPend,'USD') + '</b></div>' +
+      '<div><span>Total ' + (d ? 'adeudado' : 'por cobrar') + '</span><b>' + money(c.total,'USD') + '</b></div>' +
+      '<div><span>Próximo vencimiento</span><b>' + (c.prox ? esc(fdl(c.prox.vence)) : '—') + '</b>' + (c.prox ? '<em>' + money(c.prox.int,'USD') + '</em>' : '') + '</div></div>' +
+      '<h2>Condiciones</h2><table class="rp-t rp-kv"><tbody>' +
+      '<tr><td>Monto prestado</td><td class="n">' + money(p.monto,'USD') + '</td><td>Fecha de entrega</td><td class="n">' + esc(fdl(p.fecha)) + '</td></tr>' +
+      '<tr><td>Interés mensual (simple)</td><td class="n">' + nf.format(p.tasa * 100) + '% · ' + money(p.monto * p.tasa,'USD') + '/mes</td><td>Vence cada mes el día</td><td class="n">' + p.dia + '</td></tr>' +
+      '<tr><td>Meses vencidos</td><td class="n">' + c.meses + '</td><td>Intereses generados</td><td class="n">' + money(c.gen,'USD') + '</td></tr>' +
+      '<tr><td>Intereses pagados</td><td class="n">' + money(c.pagInt,'USD') + '</td><td>Capital devuelto</td><td class="n">' + money(c.pagCap,'USD') + '</td></tr></tbody></table>' +
+      '<h2>Calendario de intereses</h2><table class="rp-t"><thead><tr><th class="n">#</th><th>Vence</th><th class="n">Capital</th><th class="n">Interés del mes</th><th class="n">Interés acum.</th><th class="n">Pagado</th><th class="n">Pagado acum.</th><th class="n">Por pagar acum.</th></tr></thead><tbody>' +
+      c.rows.map(r => '<tr class="' + (r.vencido ? '' : 'fut') + '"><td class="n">' + r.n + '</td><td>' + esc(fdl(r.vence)) + '</td><td class="n">' + nf.format(r.cap) + '</td><td class="n">' + nf.format(r.int) + '</td><td class="n">' + nf.format(r.accI) + '</td><td class="n">' + (r.pagI ? nf.format(r.pagI) : '') + (r.pagC ? (r.pagI ? ' + ' : '') + 'cap. ' + nf.format(r.pagC) : '') + '</td><td class="n">' + nf.format(r.accP) + '</td><td class="n ' + (r.pend > 0 ? 'neg' : 'pos') + '"><b>' + nf.format(r.pend) + '</b></td></tr>').join('') +
+      '</tbody></table><div class="rp-note">Montos en dólares. Las filas en gris aún no vencen. Un saldo negativo significa intereses pagados por adelantado.</div>' +
+      '<h2>Pagos registrados</h2>' + (c.pagos.length ? '<table class="rp-t"><thead><tr><th>Fecha</th><th>Concepto</th><th>Nota</th><th class="n">Monto</th></tr></thead><tbody>' +
+        c.pagos.map(x => '<tr><td>' + esc(fdl(x.fecha)) + '</td><td>' + (x.tipo === 'capital' ? 'Abono a capital' : 'Intereses') + '</td><td>' + esc(x.nota || '') + '</td><td class="n">' + money(x.monto,'USD') + '</td></tr>').join('') +
+        '<tr class="tot"><td colspan="3">Total pagado</td><td class="n">' + money(c.pagInt + c.pagCap,'USD') + '</td></tr></tbody></table>' : '<div class="rp-note">Sin pagos registrados.</div>') +
+      (movs.length ? '<h2>Movimientos en caja</h2><table class="rp-t"><thead><tr><th>Fecha</th><th>Caja</th><th>Detalle</th><th class="n">Monto</th></tr></thead><tbody>' +
+        movs.map(m => '<tr><td>' + esc(fdl(m.fecha)) + '</td><td>' + esc(m.caja ? CAJAS[m.caja].n : '') + '</td><td>' + esc(m.desc || '') + '</td><td class="n">' + (m.signo < 0 ? '− ' : '+ ') + money(m.monto, m.moneda) + '</td></tr>').join('') + '</tbody></table>' : '') +
+      (p.notas ? '<h2>Notas</h2><div class="rp-note">' + esc(p.notas) + '</div>' : '') +
+      '<div class="rp-foot">Encanto Flores y Detalles · Informe generado por la app de cuentas</div></section>';
+  });
+  return h;
+}
+function openInforme(list){
+  let ov = $('#report');
+  if(!ov){ ov = document.createElement('div'); ov.id = 'report'; document.body.appendChild(ov); }
+  ov.innerHTML = '<div class="rp-tool"><button class="btn sec" id="rpClose">Cerrar</button><button class="btn" id="rpPrint">Guardar PDF / Imprimir</button></div><div class="rp-doc">' + informeHtml(list) + '</div>';
+  ov.hidden = false; document.body.classList.add('rp-open');
+  $('#rpClose').onclick = () => { ov.hidden = true; document.body.classList.remove('rp-open'); };
+  $('#rpPrint').onclick = () => { toast('En el menú, toca Compartir → Guardar en Archivos para el PDF'); setTimeout(() => window.print(), 300); };
+}
+/* Excel / Numbers */
+async function exportPrest(list){
+  const sheets = [];
+  list.forEach((p, i) => {
+    const c = calcPrestamo(p), sfx = list.length > 1 ? ' ' + (i + 1) : '';
+    const rows = head('Préstamo: ' + p.nombre, '', ['Concepto','Valor']);
+    rows[1] = [{v:(debemos(p) ? 'Lo debemos' : 'Nos deben') + (p.persona ? ' · ' + p.persona : '') + ' · situación al ' + fdl(c.hasta), s:2}];
+    const kv = (a, v, s) => rows.push([{v:a, s:4}, {v:v, s:s}]);
+    kv('Monto prestado', p.monto, 6); kv('Fecha de entrega', p.fecha, 5); rows[rows.length - 1][1].d = true;
+    kv('Interés mensual', p.tasa, 13); kv('Día de vencimiento', p.dia, 10);
+    kv('Meses vencidos', c.meses, 10); kv('Intereses generados', c.gen, 6); kv('Intereses pagados', c.pagInt, 6);
+    rows.push([{v:d0(p) ? 'INTERESES POR PAGAR' : 'INTERESES POR COBRAR', s:8}, {v:c.porPagar, s:9}]);
+    kv('Capital devuelto', c.pagCap, 6); kv('Capital pendiente', c.capPend, 6);
+    rows.push([{v:'TOTAL', s:8}, {v:c.total, s:9}]);
+    rows.push([]); rows.push([{v:'Calendario de intereses', s:12}]);
+    rows.push(['#','Vence','Capital','Interés del mes','Interés acum.','Pagado intereses','Abono capital','Pagado acum.','Por pagar acum.'].map(t => ({v:t, s:3})));
+    c.rows.forEach(r => rows.push([{v:r.n, s:10}, {v:r.vence, d:true, s:5}, {v:r.cap, s:6}, {v:r.int, s:6}, {v:r.accI, s:6}, {v:r.pagI || '', s:6}, {v:r.pagC || '', s:6}, {v:r.accP, s:6}, {v:r.pend, s:6}]));
+    rows.push([]); rows.push([{v:'Pagos registrados', s:12}]);
+    rows.push(['Fecha','Concepto','Monto','Nota'].map(t => ({v:t, s:3})));
+    c.pagos.forEach(x => rows.push([{v:x.fecha, d:true, s:5}, {v:x.tipo === 'capital' ? 'Abono a capital' : 'Intereses', s:4}, {v:x.monto, s:6}, {v:x.nota || '', s:4}]));
+    sheets.push({name:('Préstamo' + sfx).slice(0,31), widths:[26,13,14,15,14,15,14,14,15], rows, freeze:0});
+  });
+  const blob = XL.build(sheets), name = (list.length > 1 ? 'Encanto préstamos' : 'Encanto ' + list[0].nombre) + '.xlsx';
+  try{ const file = new File([blob], name, {type:blob.type}); if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:name}); return; } }catch(e){ if(e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  toast('Archivo listo');
+}
+const d0 = debemos;
+
 /* ---------- importar historial ---------- */
 async function doImport(file){
   try{
@@ -1494,6 +1803,14 @@ document.addEventListener('click', e => {
     case 'cpick': openPicker(id.length === 4 ? 'anio' : 'mes', id.slice(0,4), true); break;
     case 'cierreanio': openPicker('anio'); break;
     case 'cuadrar': openCuadrar(); break;
+    case 'prenew': openPreForm(); break;
+    case 'prever': openPreVer(id); break;
+    case 'preseed': seedPrestamo(); break;
+    case 'preinfall': openInforme(S.prest.slice().sort((a,b) => String(a.fecha).localeCompare(String(b.fecha)))); break;
+    case 'pretipo': if(M.f){ M.f.tipo = id; $('#fbody').innerHTML = preFields(M.f); } break;
+    case 'pagotipo': if(M.f){ M.f.tipo = id; $('#fbody').innerHTML = pagoFields(M.f); } break;
+    case 'prepago': { const pp = S.prest.find(x => x.id === id); const g = pp && (pp.pagos || []).find(x => x.id === el.dataset.pid); if(g && S.canWrite) openPagoForm(pp, g); break; }
+    case 'gopre': setTab('pre'); break;
     case 'exportar': openExport(); break;
     case 'exper': if(M.f && M.kind === 'export'){ M.f.tipoPer = id; $('#fbody').innerHTML = expFields(M.f); } break;
     case 'cierrenav': openCierre(id, el.dataset.dir || 'f'); break;
@@ -1636,6 +1953,9 @@ async function init(){
   S.db.collection('clientes').onSnapshot(snap => {
     S.cli = snap.docs.map(d => Object.assign({id:d.id}, d.data())); S.loaded.cli = true; fill();
   }, onErr);
+  S.db.collection('prestamos').onSnapshot(snap => {
+    S.prest = snap.docs.map(d => Object.assign({id:d.id}, d.data())); S.loaded.prest = true; fill();
+  }, () => { S.loaded.prest = true; fill(); });
   try{ S.bcv = JSON.parse(localStorage.getItem('bcv') || 'null'); }catch(x){}
   bcvFetch();
   S.db.doc('config/tasa').onSnapshot(snap => {
